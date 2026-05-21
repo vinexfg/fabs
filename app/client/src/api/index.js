@@ -39,10 +39,11 @@ export const api = {
     delete:       (id)        => req(`/treatments/${id}`, { method: 'DELETE' }),
   },
   payments: {
-    all:    ()           => req('/payments'),
-    list:   (patientId)  => req(`/payments/patient/${patientId}`),
-    create: (data)       => req('/payments', { method: 'POST', body: data }),
-    delete: (id)         => req(`/payments/${id}`, { method: 'DELETE' }),
+    all:            ()           => req('/payments'),
+    inadimplencia:  ()           => req('/payments/inadimplencia'),
+    list:           (patientId)  => req(`/payments/patient/${patientId}`),
+    create:         (data)       => req('/payments', { method: 'POST', body: data }),
+    delete:         (id)         => req(`/payments/${id}`, { method: 'DELETE' }),
   },
   evolutions: {
     list:   (patientId) => req(`/evolutions/patient/${patientId}`),
@@ -53,6 +54,7 @@ export const api = {
     byDate:    (date)       => req(`/appointments?date=${date}`),
     byMonth:   (month)      => req(`/appointments?month=${month}`),
     byPatient: (patientId)  => req(`/appointments/patient/${patientId}`),
+    tomorrow:  ()           => req('/appointments/tomorrow'),
     create:    (data)       => req('/appointments', { method: 'POST', body: data }),
     update:    (id, data)   => req(`/appointments/${id}`, { method: 'PUT', body: data }),
     updateStatus: (id, status) => req(`/appointments/${id}/status`, { method: 'PATCH', body: { status } }),

@@ -15,7 +15,10 @@ const STATUS_APPT = {
 export default function Dashboard() {
   const [patients, setPatients] = useState([])
   const [todayAppts, setTodayAppts] = useState([])
+  const [tomorrowAppts, setTomorrowAppts] = useState([])
+  const [clinic, setClinic] = useState({})
   const [showForm, setShowForm] = useState(false)
+  const [sentReminders, setSentReminders] = useState(new Set())
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -24,13 +27,37 @@ export default function Dashboard() {
   async function load() {
     const today = new Date().toISOString().split('T')[0]
     try {
-      const [ps, appts] = await Promise.all([
+      const [ps, appts, tomorrow, cl] = await Promise.all([
         api.patients.list(),
         api.appointments.byDate(today),
+        api.appointments.tomorrow(),
+        api.settings.get(),
       ])
       setPatients(ps)
       setTodayAppts(appts)
+      setTomorrowAppts(tomorrow)
+      setClinic(cl)
     } catch { toast('Erro ao carregar dados', 'error') }
+  }
+
+  function buildWaLink(appt) {
+    const phone = (appt.patientTelefone || '').replace(/\D/g, '')
+    if (!phone) return null
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const dateStr = tomorrow.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+    const msg = encodeURIComponent(
+      `Olá ${appt.patientNome.split(' ')[0]}! 👋\n` +
+      `Lembrando que você tem consulta *amanhã, ${dateStr}*, às *${appt.time?.slice(0,5)}h*` +
+      `${clinic.clinicName ? ` no *${clinic.clinicName}*` : ''}.\n` +
+      `Em caso de dúvidas, estamos à disposição. Até amanhã! 😊`
+    )
+    return `https://wa.me/55${phone}?text=${msg}`
+  }
+
+  function markSent(id) {
+    setSentReminders(s => new Set([...s, id]))
+    toast('Lembrete aberto no WhatsApp!', 'success')
   }
 
   async function handleCreate(data) {
@@ -117,6 +144,70 @@ export default function Dashboard() {
             </div>
         }
       </div>
+
+      {/* Tomorrow's reminders */}
+      {tomorrowAppts.length > 0 && (
+        <div className="card p-5 mb-5 border-amber-200 dark:border-amber-500/30">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🔔</span>
+              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Lembretes de Amanhã</h2>
+              <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                {tomorrowAppts.length} consulta{tomorrowAppts.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <button
+              className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 transition-colors"
+              onClick={() => {
+                const links = tomorrowAppts.filter(a => buildWaLink(a))
+                if (links.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
+                links.forEach(a => window.open(buildWaLink(a), '_blank'))
+                setSentReminders(new Set(tomorrowAppts.map(a => a.id)))
+                toast(`${links.length} lembrete${links.length !== 1 ? 's' : ''} aberto${links.length !== 1 ? 's' : ''}!`, 'success')
+              }}
+            >
+              Enviar todos →
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            {tomorrowAppts.map(a => {
+              const waLink = buildWaLink(a)
+              const sent = sentReminders.has(a.id)
+              return (
+                <div key={a.id} className="flex items-center gap-4 p-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all duration-150">
+                  <div className="text-center min-w-[52px]">
+                    <p className="text-lg font-extrabold text-amber-600 dark:text-amber-400 leading-none">{a.time?.slice(0, 5) || '--'}</p>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">{a.duration || 60}min</p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{a.patientNome}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {a.patientTelefone || <span className="text-red-400">Sem telefone</span>}
+                      {a.type ? ` · ${a.type}` : ''}
+                    </p>
+                  </div>
+                  {waLink
+                    ? <a
+                        href={waLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => markSent(a.id)}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-150 shrink-0
+                          ${sent
+                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-green-500 hover:bg-green-600 text-white shadow-sm shadow-green-500/30'
+                          }`}
+                      >
+                        {sent ? '✓ Enviado' : '💬 Enviar'}
+                      </a>
+                    : <span className="text-xs text-slate-300 dark:text-slate-600 shrink-0">Sem telefone</span>
+                  }
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">

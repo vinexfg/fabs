@@ -11,6 +11,25 @@ router.get('/', (req, res) => {
   `).all());
 });
 
+router.get('/inadimplencia', (req, res) => {
+  const rows = db.prepare(`
+    SELECT
+      p.id, p.nome, p.telefone, p.convenio,
+      COALESCE((SELECT SUM(valor) FROM treatments WHERE patientId = p.id), 0) as totalTrat,
+      COALESCE((SELECT SUM(valor) FROM payments   WHERE patientId = p.id), 0) as totalPago
+    FROM patients p
+    WHERE (
+      COALESCE((SELECT SUM(valor) FROM treatments WHERE patientId = p.id), 0) -
+      COALESCE((SELECT SUM(valor) FROM payments   WHERE patientId = p.id), 0)
+    ) > 0
+    ORDER BY (
+      COALESCE((SELECT SUM(valor) FROM treatments WHERE patientId = p.id), 0) -
+      COALESCE((SELECT SUM(valor) FROM payments   WHERE patientId = p.id), 0)
+    ) DESC
+  `).all();
+  res.json(rows.map(r => ({ ...r, emAberto: r.totalTrat - r.totalPago })));
+});
+
 router.get('/patient/:patientId', (req, res) => {
   res.json(db.prepare('SELECT * FROM payments WHERE patientId = ? ORDER BY data DESC').all(req.params.patientId));
 });

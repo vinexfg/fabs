@@ -32,6 +32,19 @@ router.get('/', (req, res) => {
   res.json(rows);
 });
 
+router.get('/tomorrow', (req, res) => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const date = tomorrow.toISOString().split('T')[0];
+  res.json(db.prepare(`
+    SELECT a.*, p.nome as patientNome, p.telefone as patientTelefone
+    FROM appointments a
+    JOIN patients p ON p.id = a.patientId
+    WHERE a.date = ? AND a.status = 'agendado'
+    ORDER BY a.time
+  `).all(date));
+});
+
 router.get('/patient/:patientId', (req, res) => {
   res.json(db.prepare('SELECT * FROM appointments WHERE patientId = ? ORDER BY date DESC, time').all(req.params.patientId));
 });

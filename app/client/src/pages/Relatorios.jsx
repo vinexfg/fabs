@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useToast } from '../context/ToastContext'
 
@@ -17,7 +18,10 @@ function fmtMonth(ym) {
 }
 
 export default function Relatorios() {
+  const [tab, setTab] = useState('receitas')
   const [payments, setPayments] = useState([])
+  const [inadimplentes, setInadimplentes] = useState([])
+  const [clinic, setClinic] = useState({})
   const [loading, setLoading] = useState(true)
   const toast = useToast()
 
@@ -25,9 +29,30 @@ export default function Relatorios() {
 
   async function load() {
     setLoading(true)
-    try { setPayments(await api.payments.all()) }
-    catch { toast('Erro ao carregar pagamentos', 'error') }
+    try {
+      const [pays, inad, cl] = await Promise.all([
+        api.payments.all(),
+        api.payments.inadimplencia(),
+        api.settings.get(),
+      ])
+      setPayments(pays)
+      setInadimplentes(inad)
+      setClinic(cl)
+    }
+    catch { toast('Erro ao carregar relatórios', 'error') }
     finally { setLoading(false) }
+  }
+
+  function buildWaLink(row) {
+    const phone = (row.telefone || '').replace(/\D/g, '')
+    if (!phone) return null
+    const msg = encodeURIComponent(
+      `Olá ${row.nome.split(' ')[0]}! 👋\n` +
+      `Identificamos um saldo em aberto de *${fmtR(row.emAberto)}* referente ao seu tratamento` +
+      `${clinic.clinicName ? ` em *${clinic.clinicName}*` : ''}.\n` +
+      `Por favor, entre em contato para regularizar. Obrigado! 😊`
+    )
+    return `https://wa.me/55${phone}?text=${msg}`
   }
 
   if (loading) return (
@@ -66,12 +91,46 @@ export default function Relatorios() {
     .sort((a, b) => (b.data || '').localeCompare(a.data || ''))
     .slice(0, 20)
 
+  const totalInadimplencia = inadimplentes.reduce((s, r) => s + r.emAberto, 0)
+
   return (
     <div className="animate-fade-up">
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Relatórios Financeiros</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Visão geral das receitas</p>
+      <div className="flex items-center justify-between mb-7">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Relatórios Financeiros</h1>
+          <p className="text-sm text-slate-400 mt-0.5">Visão geral das receitas</p>
+        </div>
       </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-6 w-fit">
+        {[
+          { id: 'receitas', label: '💰 Receitas' },
+          { id: 'inadimplencia', label: `⚠️ Inadimplência${inadimplentes.length > 0 ? ` (${inadimplentes.length})` : ''}` },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-150
+              ${tab === t.id
+                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'inadimplencia' && (
+        <InadimplenciaView
+          rows={inadimplentes}
+          total={totalInadimplencia}
+          buildWaLink={buildWaLink}
+        />
+      )}
+
+      {tab === 'receitas' && <>
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4 mb-7">
@@ -168,6 +227,95 @@ export default function Relatorios() {
               </div>
             ))
         }
+      </div>
+      </>}
+    </div>
+  )
+}
+
+function InadimplenciaView({ rows, total, buildWaLink }) {
+  const navigate = useNavigate()
+
+  if (rows.length === 0) {
+    return (
+      <div className="card p-12 text-center">
+        <div className="text-5xl mb-3 opacity-60">✅</div>
+        <p className="text-base font-bold text-slate-700 dark:text-slate-300">Nenhuma inadimplência!</p>
+        <p className="text-sm text-slate-400 mt-1">Todos os pacientes estão com pagamentos em dia.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="card p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-2xl shrink-0">⚠️</div>
+          <div>
+            <p className="text-2xl font-extrabold text-red-600 dark:text-red-400">{rows.length}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Paciente{rows.length !== 1 ? 's' : ''} inadimplente{rows.length !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        <div className="card p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-2xl shrink-0">💸</div>
+          <div>
+            <p className="text-2xl font-extrabold text-orange-600 dark:text-orange-400">{fmtR(total)}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Total em aberto</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="card overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Pacientes com saldo em aberto</h2>
+          <button
+            className="text-xs font-semibold text-green-600 dark:text-green-400 hover:text-green-700 transition-colors"
+            onClick={() => {
+              const links = rows.filter(r => buildWaLink(r))
+              links.forEach(r => window.open(buildWaLink(r), '_blank'))
+            }}
+          >
+            💬 Cobrar todos por WhatsApp
+          </button>
+        </div>
+        {rows.map(r => {
+          const waLink = buildWaLink(r)
+          const pct = r.totalTrat > 0 ? Math.round((r.totalPago / r.totalTrat) * 100) : 0
+          return (
+            <div key={r.id} className="flex items-center gap-4 px-5 py-4 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/pacientes/${r.id}`)}>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  {r.nome}
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {r.telefone || 'Sem telefone'}
+                  {r.convenio ? ` · ${r.convenio}` : ''}
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-semibold shrink-0">{pct}% pago</span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-base font-extrabold text-red-600 dark:text-red-400">{fmtR(r.emAberto)}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">de {fmtR(r.totalTrat)}</p>
+              </div>
+              {waLink
+                ? <a
+                    href={waLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-sm bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full px-3 py-1.5 text-xs transition-colors shrink-0 shadow-sm shadow-green-500/30"
+                  >
+                    💬
+                  </a>
+                : <span className="w-8" />
+              }
+            </div>
+          )
+        })}
       </div>
     </div>
   )
