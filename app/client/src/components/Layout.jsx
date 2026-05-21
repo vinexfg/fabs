@@ -1,15 +1,24 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 
 const links = [
-  { to: '/',          label: 'Dashboard', icon: '📊', end: true },
-  { to: '/agenda',    label: 'Agenda',    icon: '📅' },
-  { to: '/pacientes', label: 'Pacientes', icon: '👥' },
+  { to: '/',           label: 'Dashboard',  icon: '📊', end: true },
+  { to: '/agenda',     label: 'Agenda',     icon: '📅' },
+  { to: '/pacientes',  label: 'Pacientes',  icon: '👥' },
+  { to: '/relatorios', label: 'Relatórios', icon: '💰' },
 ]
 
 export default function Layout({ children }) {
   const { dark, toggle } = useTheme()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -50,14 +59,34 @@ export default function Layout({ children }) {
           ))}
         </nav>
 
-        {/* Theme toggle */}
-        <div className="p-3 border-t border-slate-100 dark:border-slate-800">
+        {/* Bottom actions */}
+        <div className="p-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-1">
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150
+              ${isActive
+                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+              }`
+            }
+          >
+            <span className="text-base">⚙️</span>
+            Configurações
+          </NavLink>
           <button
             onClick={toggle}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-150"
           >
             <span className="text-base">{dark ? '☀️' : '🌙'}</span>
             {dark ? 'Modo Claro' : 'Modo Escuro'}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all duration-150"
+          >
+            <span className="text-base">🚪</span>
+            Sair
           </button>
         </div>
       </aside>
