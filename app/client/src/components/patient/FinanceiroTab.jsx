@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { api } from '../../api'
 import { useToast } from '../../context/ToastContext'
+import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
 import { exportPaymentsCSV } from '../../utils/print'
@@ -30,6 +31,7 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
   const totalPago = payments.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
   const emAberto = Math.max(0, totalTrat - totalPago)
 
+  const confirm = useConfirm()
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
   async function handleSave() {
@@ -44,7 +46,7 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
   }
 
   async function handleDelete(id) {
-    if (!confirm('Remover este pagamento?')) return
+    if (!await confirm('Remover este pagamento?')) return
     try { await api.payments.delete(id); onRefresh() }
     catch (e) { toast(e.message, 'error') }
   }

@@ -135,6 +135,112 @@ export function printPatientFile(patient, treatments, payments, evolutions) {
   w.document.close()
 }
 
+export function printReceita(patient, clinic, medicines, instructions) {
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><title>Receituário — ${patient.nome}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1a1a1a; padding: 32px; max-width: 680px; margin: 0 auto; }
+    .header { border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 20px; }
+    .clinic { font-size: 16px; font-weight: 800; color: #2563eb; }
+    .sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    h2 { font-size: 15px; font-weight: 800; text-align: center; margin: 20px 0 16px; letter-spacing: 0.05em; }
+    .patient-box { background: #f8faff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; }
+    .medicines { white-space: pre-wrap; font-size: 13px; line-height: 1.8; border-left: 3px solid #2563eb; padding-left: 14px; margin-bottom: 16px; }
+    .instructions { font-size: 12px; color: #374151; white-space: pre-wrap; padding: 12px; background: #f9fafb; border-radius: 6px; }
+    .footer { margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 16px; display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; }
+    .sign { text-align: right; }
+    .sign-line { width: 200px; border-top: 1px solid #374151; margin-bottom: 6px; margin-left: auto; margin-top: 40px; }
+    .no-print { margin-bottom: 16px; }
+    @media print { .no-print { display: none; } body { padding: 12px; } }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="display:flex;gap:8px">
+    <button onclick="window.print()" style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700">🖨️ Imprimir</button>
+    <button onclick="window.close()" style="padding:8px 16px;background:#f3f4f6;border:none;border-radius:6px;cursor:pointer">Fechar</button>
+  </div>
+  <div class="header">
+    <div class="clinic">🦷 ${clinic.clinicName || 'DenteFácil'}</div>
+    ${clinic.doctorName ? `<div class="sub">${clinic.doctorName}${clinic.cro ? ' · ' + clinic.cro : ''}</div>` : ''}
+    ${clinic.clinicAddress ? `<div class="sub">${clinic.clinicAddress}</div>` : ''}
+    ${clinic.clinicPhone ? `<div class="sub">${clinic.clinicPhone}</div>` : ''}
+  </div>
+  <h2>RECEITUÁRIO</h2>
+  <div class="patient-box">
+    <strong>Paciente:</strong> ${patient.nome}
+    ${patient.dataNascimento ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Nasc.:</strong> ${fmtD(patient.dataNascimento)}` : ''}
+  </div>
+  <div class="medicines">${medicines.replace(/</g, '&lt;')}</div>
+  ${instructions ? `<div class="instructions"><strong>Instruções:</strong><br>${instructions.replace(/</g, '&lt;')}</div>` : ''}
+  <div class="footer">
+    <div>Data: ${new Date().toLocaleDateString('pt-BR')}</div>
+    <div class="sign">
+      <div class="sign-line"></div>
+      ${clinic.doctorName || 'Assinatura'}${clinic.cro ? '<br>' + clinic.cro : ''}
+    </div>
+  </div>
+</body>
+</html>`
+  const w = window.open('', '_blank', 'width=800,height=650')
+  w.document.write(html)
+  w.document.close()
+}
+
+export function printAtestado(patient, clinic, days, reason) {
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><title>Atestado — ${patient.nome}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #1a1a1a; padding: 48px; max-width: 700px; margin: 0 auto; }
+    .header { border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 30px; }
+    .clinic { font-size: 18px; font-weight: 800; color: #2563eb; }
+    .sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    h2 { font-size: 18px; font-weight: 800; text-align: center; margin: 30px 0; letter-spacing: 0.1em; }
+    .body { font-size: 14px; line-height: 2; text-align: justify; }
+    .highlight { font-weight: 700; }
+    .footer { margin-top: 60px; border-top: 1px solid #e5e7eb; padding-top: 16px; display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; }
+    .sign-line { width: 220px; border-top: 1px solid #374151; margin-bottom: 6px; margin-left: auto; margin-top: 60px; }
+    .no-print { margin-bottom: 16px; }
+    @media print { .no-print { display: none; } body { padding: 24px; } }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="display:flex;gap:8px">
+    <button onclick="window.print()" style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700">🖨️ Imprimir</button>
+    <button onclick="window.close()" style="padding:8px 16px;background:#f3f4f6;border:none;border-radius:6px;cursor:pointer">Fechar</button>
+  </div>
+  <div class="header">
+    <div class="clinic">🦷 ${clinic.clinicName || 'DenteFácil'}</div>
+    ${clinic.doctorName ? `<div class="sub">${clinic.doctorName}${clinic.cro ? ' · ' + clinic.cro : ''}</div>` : ''}
+    ${clinic.clinicAddress ? `<div class="sub">${clinic.clinicAddress}</div>` : ''}
+  </div>
+  <h2>ATESTADO ODONTOLÓGICO</h2>
+  <div class="body">
+    Atesto para os devidos fins que o(a) paciente <span class="highlight">${patient.nome}</span>
+    esteve sob meus cuidados odontológicos na data de <span class="highlight">${new Date().toLocaleDateString('pt-BR')}</span>,
+    ${days && +days > 0 ? `necessitando de <span class="highlight">${days} dia${+days > 1 ? 's' : ''}</span> de repouso` : 'comparecendo para atendimento odontológico'}
+    ${reason ? `, em razão de: <span class="highlight">${reason}</span>` : ''}.
+  </div>
+  <div style="text-align:right">
+    <div class="sign-line"></div>
+    ${clinic.doctorName || 'Assinatura'}${clinic.cro ? '<br>' + clinic.cro : ''}
+  </div>
+  <div class="footer">
+    <div>${clinic.clinicAddress || ''}</div>
+    <div>${new Date().toLocaleDateString('pt-BR')}</div>
+  </div>
+</body>
+</html>`
+  const w = window.open('', '_blank', 'width=800,height=650')
+  w.document.write(html)
+  w.document.close()
+}
+
 export function exportPaymentsCSV(patient, payments) {
   const headers = ['Data', 'Descrição', 'Forma de Pagamento', 'Valor (R$)']
   const rows = payments.map(p => [

@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { api } from '../../api'
 import { useToast } from '../../context/ToastContext'
+import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
 
@@ -16,14 +17,27 @@ function fmtR(v) {
 
 export default function TratamentoTab({ patientId, treatments, onRefresh }) {
   const [showForm, setShowForm] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [templates, setTemplates] = useState([])
   const [form, setForm] = useState({ proc: '', dente: '', valor: '', status: 'pendente', obs: '' })
   const toast = useToast()
+  const confirm = useConfirm()
 
   const done = treatments.filter(t => t.status === 'concluido').length
   const total = treatments.length
   const pct = total ? Math.round((done / total) * 100) : 0
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  useEffect(() => {
+    api.templates.list().then(setTemplates).catch(() => {})
+  }, [])
+
+  function applyTemplate(name) {
+    setForm(f => ({ ...f, proc: name }))
+    setShowTemplates(false)
+    setShowForm(true)
+  }
 
   async function handleSave() {
     if (!form.proc.trim()) return
@@ -42,7 +56,7 @@ export default function TratamentoTab({ patientId, treatments, onRefresh }) {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Remover este procedimento?')) return
+    if (!await confirm('Remover este procedimento?')) return
     try { await api.treatments.delete(id); onRefresh() }
     catch (e) { toast(e.message, 'error') }
   }
@@ -54,7 +68,12 @@ export default function TratamentoTab({ patientId, treatments, onRefresh }) {
           <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Plano de Tratamento</p>
           {total > 0 && <p className="text-xs text-slate-400 mt-0.5">{done} de {total} concluídos · {pct}%</p>}
         </div>
-        <button className="btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Adicionar</button>
+        <div className="flex gap-2">
+          {templates.length > 0 && (
+            <button className="btn-secondary btn-sm" onClick={() => setShowTemplates(true)}>📋 Templates</button>
+          )}
+          <button className="btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Adicionar</button>
+        </div>
       </div>
 
       {total > 0 && (
@@ -97,12 +116,29 @@ export default function TratamentoTab({ patientId, treatments, onRefresh }) {
           </div>
       }
 
+      {/* Template picker */}
+      {showTemplates && (
+        <Modal title="📋 Selecionar Template" onClose={() => setShowTemplates(false)} onSave={() => setShowTemplates(false)} saveLabel="Fechar">
+          <div className="flex flex-wrap gap-2">
+            {templates.map(t => (
+              <button
+                key={t.id}
+                onClick={() => applyTemplate(t.name)}
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-semibold rounded-xl transition-colors"
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </Modal>
+      )}
+
       {showForm && (
         <Modal title="Adicionar Procedimento" onClose={() => setShowForm(false)} onSave={handleSave}>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="label">Procedimento *</label>
-              <input className="input mt-1.5" value={form.proc} onChange={set('proc')} placeholder="Ex: Extração, Canal, Implante..." />
+              <input className="input mt-1.5" value={form.proc} onChange={set('proc')} placeholder="Ex: Extração, Canal, Implante..." autoFocus />
             </div>
             <div>
               <label className="label">Número do dente</label>

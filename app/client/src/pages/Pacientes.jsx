@@ -15,6 +15,7 @@ function calcAge(dob) {
 export default function Pacientes() {
   const [patients, setPatients] = useState([])
   const [q, setQ] = useState('')
+  const [convenioFilter, setConvenioFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
@@ -35,14 +36,20 @@ export default function Pacientes() {
     } catch (e) { toast(e.message, 'error') }
   }
 
+  const convenios = ['Todos', ...Array.from(new Set(patients.map(p => p.convenio || 'Particular').filter(Boolean))).sort()]
+
   const filtered = patients
     .filter(p => {
+      if (convenioFilter && convenioFilter !== 'Todos') {
+        const pc = p.convenio || 'Particular'
+        if (pc !== convenioFilter) return false
+      }
       if (!q) return true
       const lq = q.toLowerCase()
       return (
         p.nome.toLowerCase().includes(lq) ||
         (p.telefone || '').includes(q) ||
-        (p.cpf || '').replace(/\D/g,'').includes(q.replace(/\D/g,'')) ||
+        (p.cpf || '').replace(/\D/g, '').includes(q.replace(/\D/g, '')) ||
         (p.convenio || '').toLowerCase().includes(lq)
       )
     })
@@ -60,7 +67,7 @@ export default function Pacientes() {
         </button>
       </div>
 
-      <div className="mb-5 relative">
+      <div className="mb-4 relative">
         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
         <input
           className="input pl-10"
@@ -70,9 +77,28 @@ export default function Pacientes() {
         />
       </div>
 
+      {/* Convenio filter chips */}
+      {convenios.length > 2 && (
+        <div className="flex flex-wrap gap-2 mb-5">
+          {convenios.map(c => (
+            <button
+              key={c}
+              onClick={() => setConvenioFilter(c === 'Todos' ? '' : c)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-150
+                ${(convenioFilter === c) || (c === 'Todos' && !convenioFilter)
+                  ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/30'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         {filtered.length === 0
-          ? <Empty icon="🔍" text={q ? 'Nenhum resultado encontrado.' : 'Nenhum paciente cadastrado.'} />
+          ? <Empty icon="🔍" text={q || convenioFilter ? 'Nenhum resultado encontrado.' : 'Nenhum paciente cadastrado.'} />
           : filtered.map(p => <PatientCard key={p.id} patient={p} onClick={() => navigate(`/pacientes/${p.id}`)} />)
         }
       </div>
@@ -91,9 +117,10 @@ function PatientCard({ patient: p, onClick }) {
       className="card px-5 py-4 flex items-center gap-4 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-150 group"
       onClick={onClick}
     >
-      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm shadow-blue-500/30">
-        {initials}
-      </div>
+      {p.foto
+        ? <img src={p.foto} alt={p.nome} className="w-11 h-11 rounded-full object-cover shrink-0" />
+        : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm shadow-blue-500/30">{initials}</div>
+      }
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-slate-900 dark:text-slate-100">{p.nome}</p>
         <p className="text-xs text-slate-400 mt-0.5">

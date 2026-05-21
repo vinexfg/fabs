@@ -13,23 +13,23 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa } = req.body;
-  if (!nome) return res.status(400).json({ error: 'Nome Ã© obrigatÃ³rio' });
+  const { nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, foto } = req.body;
+  if (!nome) return res.status(400).json({ error: 'Nome é obrigatório' });
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO patients (id, nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa);
+    INSERT INTO patients (id, nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, foto)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, foto || null);
   res.json(db.prepare('SELECT * FROM patients WHERE id = ?').get(id));
 });
 
 router.put('/:id', (req, res) => {
-  const { nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa } = req.body;
-  if (!nome) return res.status(400).json({ error: 'Nome Ã© obrigatÃ³rio' });
+  const { nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, foto } = req.body;
+  if (!nome) return res.status(400).json({ error: 'Nome é obrigatório' });
   db.prepare(`
-    UPDATE patients SET nome=?, dataNascimento=?, cpf=?, telefone=?, email=?, endereco=?, convenio=?, alergias=?, medicamentos=?, conds=?, queixa=?
+    UPDATE patients SET nome=?, dataNascimento=?, cpf=?, telefone=?, email=?, endereco=?, convenio=?, alergias=?, medicamentos=?, conds=?, queixa=?, foto=?
     WHERE id=?
-  `).run(nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, req.params.id);
+  `).run(nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, foto || null, req.params.id);
   res.json(db.prepare('SELECT * FROM patients WHERE id = ?').get(req.params.id));
 });
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { api } from '../../api'
 import { useToast } from '../../context/ToastContext'
+import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
 
@@ -15,6 +16,7 @@ export default function EvolusaoTab({ patientId, evolutions, onRefresh }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ proc: '', data: today(), hora: '', notas: '', proxConsulta: '' })
   const toast = useToast()
+  const confirm = useConfirm()
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -30,7 +32,7 @@ export default function EvolusaoTab({ patientId, evolutions, onRefresh }) {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Remover esta evolução?')) return
+    if (!await confirm('Remover esta evolução?')) return
     try { await api.evolutions.delete(id); onRefresh() }
     catch (e) { toast(e.message, 'error') }
   }

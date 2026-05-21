@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useToast } from '../context/ToastContext'
+import { useConfirm } from '../context/ConfirmContext'
 import Modal from '../components/Modal'
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -47,6 +48,7 @@ export default function Agenda() {
   const [form,       setForm]       = useState(EMPTY_FORM)
   const navigate = useNavigate()
   const toast = useToast()
+  const confirm = useConfirm()
 
   const loadMonth = useCallback(async (d) => {
     try { setMonthAppts(await api.appointments.byMonth(fmtMonthKey(d))) }
@@ -85,7 +87,7 @@ export default function Agenda() {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Remover esta consulta?')) return
+    if (!await confirm('Remover esta consulta?')) return
     try {
       await api.appointments.delete(id)
       loadDay(selected)
