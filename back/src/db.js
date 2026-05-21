@@ -2,7 +2,7 @@ const { DatabaseSync } = require('node:sqlite');
 const { createHash } = require('crypto');
 const path = require('path');
 
-const db = new DatabaseSync(path.join(__dirname, 'data.db'));
+const db = new DatabaseSync(path.join(__dirname, '..', 'data.db'));
 
 const hashPw = (pw) => createHash('sha256').update(pw + '_df2024').digest('hex');
 

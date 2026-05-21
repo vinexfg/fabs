@@ -2,6 +2,6 @@ node_modules/
 *.db
 *.db-shm
 *.db-wal
-app/server/.env
-dist/
+back/.env
+front/dist/
 .DS_Store

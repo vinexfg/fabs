@@ -1,0 +1,12 @@
+{
+  "name": "dentefacil",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\"",
+    "install:all": "npm install && npm install --prefix back && npm install --prefix front"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
