@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { PatientRepository, AppointmentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import PatientForm from '../components/patient/PatientForm'
 import Badge from '../components/Badge'
@@ -27,16 +27,16 @@ export default function Dashboard() {
   async function load() {
     const today = new Date().toISOString().split('T')[0]
     try {
-      const [ps, appts, tomorrow, cl] = await Promise.all([
-        api.patients.list(),
-        api.appointments.byDate(today),
-        api.appointments.tomorrow(),
-        api.settings.get(),
+      const [patientList, todayAppointments, tomorrowAppointments, clinicSettings] = await Promise.all([
+        PatientRepository.findAll(),
+        AppointmentRepository.findByDate(today),
+        AppointmentRepository.findTomorrow(),
+        SettingsRepository.find(),
       ])
-      setPatients(ps)
-      setTodayAppts(appts)
-      setTomorrowAppts(tomorrow)
-      setClinic(cl)
+      setPatients(patientList)
+      setTodayAppts(todayAppointments)
+      setTomorrowAppts(tomorrowAppointments)
+      setClinic(clinicSettings)
     } catch { toast('Erro ao carregar dados', 'error') }
   }
 
@@ -62,11 +62,11 @@ export default function Dashboard() {
 
   async function handleCreate(data) {
     try {
-      const p = await api.patients.create(data)
+      const newPatient = await PatientRepository.create(data)
       toast('Paciente cadastrado!', 'success')
       setShowForm(false)
-      navigate(`/pacientes/${p.id}`)
-    } catch (e) { toast(e.message, 'error') }
+      navigate(`/pacientes/${newPatient.id}`)
+    } catch (error) { toast(error.message, 'error') }
   }
 
   const recent = [...patients].sort((a, b) => (b.criadoEm ?? '').localeCompare(a.criadoEm ?? '')).slice(0, 6)

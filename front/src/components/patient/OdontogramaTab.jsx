@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { api } from '../../api'
+import { OdontogramaRepository } from '../../infrastructure/http'
 import { useToast } from '../../context/ToastContext'
 
 // FDI layout: upper right → upper left / lower right → lower left
@@ -38,10 +38,10 @@ export default function OdontogramaTab({ patientId }) {
 
   async function load() {
     try {
-      const rows = await api.odontograma.get(patientId)
-      const map = {}
-      rows.forEach(r => { map[r.tooth] = { status: r.status, notes: r.notes } })
-      setData(map)
+      const toothRecords = await OdontogramaRepository.findByPatient(patientId)
+      const toothMap = {}
+      toothRecords.forEach(record => { toothMap[record.tooth] = { status: record.status, notes: record.notes } })
+      setData(toothMap)
     } catch { toast('Erro ao carregar odontograma', 'error') }
   }
 
@@ -49,9 +49,9 @@ export default function OdontogramaTab({ patientId }) {
     const toothStr = String(tooth)
     setSaving(toothStr)
     try {
-      await api.odontograma.update(patientId, { tooth: toothStr, status })
-      setData(d => ({ ...d, [toothStr]: { ...d[toothStr], status } }))
-    } catch (e) { toast(e.message, 'error') }
+      await OdontogramaRepository.update(patientId, { tooth: toothStr, status })
+      setData(current => ({ ...current, [toothStr]: { ...current[toothStr], status } }))
+    } catch (error) { toast(error.message, 'error') }
     finally { setSaving(null); setPopup(null) }
   }
 

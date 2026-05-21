@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { AppointmentRepository, PatientRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 import Modal from '../components/Modal'
@@ -51,16 +51,16 @@ export default function Agenda() {
   const confirm = useConfirm()
 
   const loadMonth = useCallback(async (d) => {
-    try { setMonthAppts(await api.appointments.byMonth(fmtMonthKey(d))) }
+    try { setMonthAppts(await AppointmentRepository.findByMonth(fmtMonthKey(d))) }
     catch { toast('Erro ao carregar agenda', 'error') }
   }, [])
 
   const loadDay = useCallback(async (date) => {
-    try { setDayAppts(await api.appointments.byDate(date)) }
+    try { setDayAppts(await AppointmentRepository.findByDate(date)) }
     catch {}
   }, [])
 
-  useEffect(() => { api.patients.list().then(setPatients).catch(() => {}) }, [])
+  useEffect(() => { PatientRepository.findAll().then(setPatients).catch(() => {}) }, [])
   useEffect(() => { loadMonth(ref) }, [ref])
   useEffect(() => { loadDay(selected) }, [selected])
 
@@ -69,30 +69,30 @@ export default function Agenda() {
   async function handleSave() {
     if (!form.patientId || !form.date || !form.time) { toast('Preencha os campos obrigatórios.', 'error'); return }
     try {
-      await api.appointments.create(form)
+      await AppointmentRepository.create(form)
       toast('Consulta agendada!', 'success')
       setShowForm(false)
       setForm(EMPTY_FORM)
       loadMonth(ref)
       loadDay(selected)
-    } catch (e) { toast(e.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
   }
 
-  async function handleStatus(id, status) {
+  async function handleStatus(appointmentId, status) {
     try {
-      await api.appointments.updateStatus(id, status)
+      await AppointmentRepository.updateStatus(appointmentId, status)
       loadDay(selected)
       loadMonth(ref)
-    } catch (e) { toast(e.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(appointmentId) {
     if (!await confirm('Remover esta consulta?')) return
     try {
-      await api.appointments.delete(id)
+      await AppointmentRepository.remove(appointmentId)
       loadDay(selected)
       loadMonth(ref)
-    } catch (e) { toast(e.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
   }
 
   // Group month appointments by date

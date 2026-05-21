@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { api } from '../api'
+import { SettingsRepository, TemplateRepository, BackupRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
@@ -24,9 +24,9 @@ export default function Settings() {
 
   async function loadAll() {
     try {
-      const [s, t] = await Promise.all([api.settings.get(), api.templates.list()])
-      setClinic(c => ({ ...c, ...s }))
-      setTemplates(t)
+      const [clinicSettings, templateList] = await Promise.all([SettingsRepository.find(), TemplateRepository.findAll()])
+      setClinic(current => ({ ...current, ...clinicSettings }))
+      setTemplates(templateList)
     } catch { toast('Erro ao carregar configurações', 'error') }
   }
 
@@ -34,9 +34,9 @@ export default function Settings() {
     e.preventDefault()
     setSavingClinic(true)
     try {
-      await api.settings.update(clinic)
+      await SettingsRepository.update(clinic)
       toast('Configurações salvas!', 'success')
-    } catch (err) { toast(err.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
     finally { setSavingClinic(false) }
   }
 
@@ -46,10 +46,10 @@ export default function Settings() {
     if (pw.next.length < 4) { toast('Senha muito curta (mínimo 4 caracteres)', 'error'); return }
     setSavingPw(true)
     try {
-      await api.settings.updatePassword(pw.current, pw.next)
+      await SettingsRepository.updatePassword(pw.current, pw.next)
       toast('Senha alterada!', 'success')
       setPw({ current: '', next: '', confirm: '' })
-    } catch (err) { toast(err.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
     finally { setSavingPw(false) }
   }
 
@@ -57,44 +57,44 @@ export default function Settings() {
     if (!newTpl.trim()) return
     setSavingTpl(true)
     try {
-      const t = await api.templates.create({ name: newTpl.trim() })
-      setTemplates(ts => [...ts, t])
+      const newTemplate = await TemplateRepository.create({ name: newTpl.trim() })
+      setTemplates(current => [...current, newTemplate])
       setNewTpl('')
-    } catch (err) { toast(err.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
     finally { setSavingTpl(false) }
   }
 
-  async function deleteTemplate(id) {
+  async function deleteTemplate(templateId) {
     try {
-      await api.templates.delete(id)
-      setTemplates(ts => ts.filter(t => t.id !== id))
-    } catch (err) { toast(err.message, 'error') }
+      await TemplateRepository.remove(templateId)
+      setTemplates(current => current.filter(template => template.id !== templateId))
+    } catch (error) { toast(error.message, 'error') }
   }
 
   async function handleBackupExport() {
     try {
-      const blob = await api.backup.export()
+      const blob = await BackupRepository.exportBackup()
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `backup-dentefacil-${new Date().toISOString().slice(0, 10)}.json`
-      a.click()
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `backup-dentefacil-${new Date().toISOString().slice(0, 10)}.json`
+      anchor.click()
       URL.revokeObjectURL(url)
       toast('Backup exportado!', 'success')
-    } catch (err) { toast(err.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
   }
 
-  async function handleBackupRestore(e) {
-    const file = e.target.files?.[0]
+  async function handleBackupRestore(event) {
+    const file = event.target.files?.[0]
     if (!file) return
     try {
       const text = await file.text()
       const data = JSON.parse(text)
-      await api.backup.restore(data)
+      await BackupRepository.restore(data)
       toast('Backup restaurado com sucesso!', 'success')
       loadAll()
     } catch { toast('Arquivo inválido ou erro ao restaurar', 'error') }
-    e.target.value = ''
+    event.target.value = ''
   }
 
   const setC = k => e => setClinic(c => ({ ...c, [k]: e.target.value }))
@@ -157,10 +157,10 @@ export default function Settings() {
         {templates.length === 0
           ? <p className="text-sm text-slate-400 text-center py-4">Nenhum template cadastrado.</p>
           : <div className="flex flex-wrap gap-2">
-              {templates.map(t => (
-                <span key={t.id} className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-full">
-                  {t.name}
-                  <button onClick={() => deleteTemplate(t.id)} className="text-slate-400 hover:text-red-500 transition-colors leading-none">×</button>
+              {templates.map(template => (
+                <span key={template.id} className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                  {template.name}
+                  <button onClick={() => deleteTemplate(template.id)} className="text-slate-400 hover:text-red-500 transition-colors leading-none">×</button>
                 </span>
               ))}
             </div>

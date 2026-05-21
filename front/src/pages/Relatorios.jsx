@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { PaymentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 
 const FORMAS = {
@@ -30,14 +30,14 @@ export default function Relatorios() {
   async function load() {
     setLoading(true)
     try {
-      const [pays, inad, cl] = await Promise.all([
-        api.payments.all(),
-        api.payments.inadimplencia(),
-        api.settings.get(),
+      const [paymentList, inadimplentesList, clinicSettings] = await Promise.all([
+        PaymentRepository.findAll(),
+        PaymentRepository.findInadimplentes(),
+        SettingsRepository.find(),
       ])
-      setPayments(pays)
-      setInadimplentes(inad)
-      setClinic(cl)
+      setPayments(paymentList)
+      setInadimplentes(inadimplentesList)
+      setClinic(clinicSettings)
     }
     catch { toast('Erro ao carregar relatórios', 'error') }
     finally { setLoading(false) }

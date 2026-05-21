@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { PatientRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import PatientForm from '../components/patient/PatientForm'
 import { Empty } from './Dashboard'
 
-function calcAge(dob) {
-  const today = new Date(), birth = new Date(dob)
-  let age = today.getFullYear() - birth.getFullYear()
-  if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--
+function calculateAge(dateOfBirth) {
+  const today = new Date()
+  const birthDate = new Date(dateOfBirth)
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const hasNotHadBirthdayYet = today < new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate())
+  if (hasNotHadBirthdayYet) age--
   return age
 }
 
 export default function Pacientes() {
   const [patients, setPatients] = useState([])
-  const [q, setQ] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [convenioFilter, setConvenioFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
   const navigate = useNavigate()
@@ -23,34 +25,36 @@ export default function Pacientes() {
   useEffect(() => { load() }, [])
 
   async function load() {
-    try { setPatients(await api.patients.list()) }
+    try { setPatients(await PatientRepository.findAll()) }
     catch { toast('Erro ao carregar', 'error') }
   }
 
   async function handleCreate(data) {
     try {
-      const p = await api.patients.create(data)
+      const newPatient = await PatientRepository.create(data)
       toast('Paciente cadastrado!', 'success')
       setShowForm(false)
-      navigate(`/pacientes/${p.id}`)
-    } catch (e) { toast(e.message, 'error') }
+      navigate(`/pacientes/${newPatient.id}`)
+    } catch (error) {
+      toast(error.message, 'error')
+    }
   }
 
-  const convenios = ['Todos', ...Array.from(new Set(patients.map(p => p.convenio || 'Particular').filter(Boolean))).sort()]
+  const convenios = ['Todos', ...Array.from(new Set(patients.map(patient => patient.convenio || 'Particular').filter(Boolean))).sort()]
 
   const filtered = patients
-    .filter(p => {
+    .filter(patient => {
       if (convenioFilter && convenioFilter !== 'Todos') {
-        const pc = p.convenio || 'Particular'
-        if (pc !== convenioFilter) return false
+        const patientConvenio = patient.convenio || 'Particular'
+        if (patientConvenio !== convenioFilter) return false
       }
-      if (!q) return true
-      const lq = q.toLowerCase()
+      if (!searchQuery) return true
+      const lowerQuery = searchQuery.toLowerCase()
       return (
-        p.nome.toLowerCase().includes(lq) ||
-        (p.telefone || '').includes(q) ||
-        (p.cpf || '').replace(/\D/g, '').includes(q.replace(/\D/g, '')) ||
-        (p.convenio || '').toLowerCase().includes(lq)
+        patient.nome.toLowerCase().includes(lowerQuery) ||
+        (patient.telefone || '').includes(searchQuery) ||
+        (patient.cpf || '').replace(/\D/g, '').includes(searchQuery.replace(/\D/g, '')) ||
+        (patient.convenio || '').toLowerCase().includes(lowerQuery)
       )
     })
     .sort((a, b) => a.nome.localeCompare(b.nome))
@@ -72,8 +76,8 @@ export default function Pacientes() {
         <input
           className="input pl-10"
           placeholder="Buscar por nome, telefone, CPF ou convênio..."
-          value={q}
-          onChange={e => setQ(e.target.value)}
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
         />
       </div>
 
@@ -98,8 +102,8 @@ export default function Pacientes() {
 
       <div className="flex flex-col gap-2">
         {filtered.length === 0
-          ? <Empty icon="🔍" text={q || convenioFilter ? 'Nenhum resultado encontrado.' : 'Nenhum paciente cadastrado.'} />
-          : filtered.map(p => <PatientCard key={p.id} patient={p} onClick={() => navigate(`/pacientes/${p.id}`)} />)
+          ? <Empty icon="🔍" text={searchQuery || convenioFilter ? 'Nenhum resultado encontrado.' : 'Nenhum paciente cadastrado.'} />
+          : filtered.map(patient => <PatientCard key={patient.id} patient={patient} onClick={() => navigate(`/pacientes/${patient.id}`)} />)
         }
       </div>
 
@@ -108,25 +112,25 @@ export default function Pacientes() {
   )
 }
 
-function PatientCard({ patient: p, onClick }) {
-  const initials = p.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-  const age = p.dataNascimento ? calcAge(p.dataNascimento) : null
+function PatientCard({ patient, onClick }) {
+  const initials = patient.nome.split(' ').map(namePart => namePart[0]).slice(0, 2).join('').toUpperCase()
+  const age = patient.dataNascimento ? calculateAge(patient.dataNascimento) : null
 
   return (
     <div
       className="card px-5 py-4 flex items-center gap-4 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-150 group"
       onClick={onClick}
     >
-      {p.foto
-        ? <img src={p.foto} alt={p.nome} className="w-11 h-11 rounded-full object-cover shrink-0" />
+      {patient.foto
+        ? <img src={patient.foto} alt={patient.nome} className="w-11 h-11 rounded-full object-cover shrink-0" />
         : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm shadow-blue-500/30">{initials}</div>
       }
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-slate-900 dark:text-slate-100">{p.nome}</p>
+        <p className="font-semibold text-slate-900 dark:text-slate-100">{patient.nome}</p>
         <p className="text-xs text-slate-400 mt-0.5">
-          {p.telefone || 'Sem telefone'}
+          {patient.telefone || 'Sem telefone'}
           {age ? ` · ${age} anos` : ''}
-          {p.convenio ? ` · ${p.convenio}` : ''}
+          {patient.convenio ? ` · ${patient.convenio}` : ''}
         </p>
       </div>
       <span className="text-slate-300 dark:text-slate-600 group-hover:text-blue-400 dark:group-hover:text-blue-500 transition-colors font-bold">→</span>

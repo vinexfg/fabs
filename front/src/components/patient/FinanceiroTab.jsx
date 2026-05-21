@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
-import { api } from '../../api'
+import { PaymentRepository } from '../../infrastructure/http'
 import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
-import { exportPaymentsCSV } from '../../utils/print'
+import { exportPaymentsCSV } from '../../utils/exportCsv'
 
 const FORMAS = {
   pix: 'PIX', dinheiro: 'Dinheiro',
@@ -37,18 +37,18 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
   async function handleSave() {
     if (!form.descricao.trim() || !form.valor || parseFloat(form.valor) <= 0) return
     try {
-      await api.payments.create({ patientId, ...form, valor: parseFloat(form.valor) })
+      await PaymentRepository.create({ patientId, ...form, valor: parseFloat(form.valor) })
       toast('Pagamento registrado!', 'success')
       setShowForm(false)
       setForm({ descricao: '', valor: '', data: today(), forma: 'pix' })
       onRefresh()
-    } catch (e) { toast(e.message, 'error') }
+    } catch (error) { toast(error.message, 'error') }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(paymentId) {
     if (!await confirm('Remover este pagamento?')) return
-    try { await api.payments.delete(id); onRefresh() }
-    catch (e) { toast(e.message, 'error') }
+    try { await PaymentRepository.remove(paymentId); onRefresh() }
+    catch (error) { toast(error.message, 'error') }
   }
 
   return (
@@ -81,15 +81,15 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
       <div className="card overflow-hidden">
         {payments.length === 0
           ? <Empty icon="💳" text="Nenhum pagamento registrado." />
-          : payments.map(p => (
-              <div key={p.id} className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+          : payments.map(payment => (
+              <div key={payment.id} className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{p.descricao}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{fmtDate(p.data)} · {FORMAS[p.forma] || p.forma}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{payment.descricao}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{fmtDate(payment.data)} · {FORMAS[payment.forma] || payment.forma}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{fmtR(parseFloat(p.valor))}</span>
-                  <button className="btn-danger btn-sm" onClick={() => handleDelete(p.id)}>🗑️</button>
+                  <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{fmtR(parseFloat(payment.valor))}</span>
+                  <button className="btn-danger btn-sm" onClick={() => handleDelete(payment.id)}>🗑️</button>
                 </div>
               </div>
             ))

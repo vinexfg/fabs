@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { PatientRepository, TreatmentRepository, PaymentRepository, EvolutionRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 import PatientForm from '../components/patient/PatientForm'
@@ -11,7 +11,10 @@ import EvolusaoTab from '../components/patient/EvolusaoTab'
 import OdontogramaTab from '../components/patient/OdontogramaTab'
 import Badge from '../components/Badge'
 import Modal from '../components/Modal'
-import { printPatientFile, printReceita, printAtestado } from '../utils/print'
+import PatientFilePrint from '../components/patient/print/PatientFilePrint'
+import ReceitaPrint from '../components/patient/print/ReceitaPrint'
+import AtestadoPrint from '../components/patient/print/AtestadoPrint'
+import { usePrint } from '../components/patient/print/usePrint'
 
 const TABS = [
   { id: 'ficha',       label: 'Ficha',       icon: '📋' },
@@ -21,17 +24,21 @@ const TABS = [
   { id: 'evolucoes',   label: 'Evoluções',   icon: '📝' },
 ]
 
-function fmtR(v) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0)
+function formatCurrency(value) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
 }
-function calcAge(dob) {
-  const today = new Date(), birth = new Date(dob)
-  let age = today.getFullYear() - birth.getFullYear()
-  if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--
+
+function calculateAge(dateOfBirth) {
+  const today = new Date()
+  const birthDate = new Date(dateOfBirth)
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const hasNotHadBirthdayYet = today < new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate())
+  if (hasNotHadBirthdayYet) age--
   return age
 }
-function fmtPhone(p) {
-  return p.replace(/\D/g, '')
+
+function stripNonDigits(phoneNumber) {
+  return phoneNumber.replace(/\D/g, '')
 }
 
 export default function PatientDetail() {
@@ -39,12 +46,13 @@ export default function PatientDetail() {
   const navigate = useNavigate()
   const toast = useToast()
   const confirm = useConfirm()
+  const { patientFileRef, receitaRef, atestadoRef, printPatientFile, printReceita, printAtestado } = usePrint()
 
   const [patient, setPatient] = useState(null)
   const [treatments, setTreatments] = useState([])
   const [payments, setPayments] = useState([])
   const [evolutions, setEvolutions] = useState([])
-  const [tab, setTab] = useState('ficha')
+  const [activeTab, setActiveTab] = useState('ficha')
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [docModal, setDocModal] = useState(null) // 'receita' | 'atestado'
@@ -55,36 +63,47 @@ export default function PatientDetail() {
   async function loadAll() {
     setLoading(true)
     try {
-      const [p, tr, py, ev, cl] = await Promise.all([
-        api.patients.get(id),
-        api.treatments.list(id),
-        api.payments.list(id),
-        api.evolutions.list(id),
-        api.settings.get(),
+      const [patientData, treatmentList, paymentList, evolutionList, clinicSettings] = await Promise.all([
+        PatientRepository.findById(id),
+        TreatmentRepository.findByPatient(id),
+        PaymentRepository.findByPatient(id),
+        EvolutionRepository.findByPatient(id),
+        SettingsRepository.find(),
       ])
-      setPatient(p); setTreatments(tr); setPayments(py); setEvolutions(ev); setClinic(cl)
+      setPatient(patientData)
+      setTreatments(treatmentList)
+      setPayments(paymentList)
+      setEvolutions(evolutionList)
+      setClinic(clinicSettings)
     } catch {
       toast('Erro ao carregar paciente', 'error')
       navigate('/pacientes')
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleEdit(data) {
     try {
-      const updated = await api.patients.update(id, data)
+      const updated = await PatientRepository.update(id, data)
       setPatient(updated)
       toast('Dados atualizados!', 'success')
       setEditing(false)
-    } catch (e) { toast(e.message, 'error') }
+    } catch (error) {
+      toast(error.message, 'error')
+    }
   }
 
   async function handleDelete() {
-    if (!await confirm(`Excluir "${patient.nome}"?\n\nTodos os dados serão removidos permanentemente.`)) return
+    const confirmed = await confirm(`Excluir "${patient.nome}"?\n\nTodos os dados serão removidos permanentemente.`)
+    if (!confirmed) return
     try {
-      await api.patients.delete(id)
+      await PatientRepository.remove(id)
       toast('Paciente excluído.')
       navigate('/pacientes')
-    } catch (e) { toast(e.message, 'error') }
+    } catch (error) {
+      toast(error.message, 'error')
+    }
   }
 
   if (loading) return (
@@ -95,14 +114,14 @@ export default function PatientDetail() {
   )
   if (!patient) return null
 
-  const initials = patient.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-  const totalTrat = treatments.reduce((s, t) => s + (parseFloat(t.valor) || 0), 0)
-  const totalPago = payments.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
-  const emAberto = Math.max(0, totalTrat - totalPago)
-  const doneTr = treatments.filter(t => t.status === 'concluido').length
+  const initials = patient.nome.split(' ').map(namePart => namePart[0]).slice(0, 2).join('').toUpperCase()
+  const totalTreatments = treatments.reduce((sum, treatment) => sum + (parseFloat(treatment.valor) || 0), 0)
+  const totalPaid = payments.reduce((sum, payment) => sum + (parseFloat(payment.valor) || 0), 0)
+  const amountOwed = Math.max(0, totalTreatments - totalPaid)
+  const completedTreatments = treatments.filter(treatment => treatment.status === 'concluido').length
 
-  const waPhone = patient.telefone ? `55${fmtPhone(patient.telefone)}` : null
-  const waMsg = encodeURIComponent(`Olá ${patient.nome.split(' ')[0]}! Aqui é o consultório ${clinic.clinicName || 'DenteFácil'}.`)
+  const whatsappPhone = patient.telefone ? `55${stripNonDigits(patient.telefone)}` : null
+  const whatsappMessage = encodeURIComponent(`Olá ${patient.nome.split(' ')[0]}! Aqui é o consultório ${clinic.clinicName || 'DenteFácil'}.`)
 
   return (
     <div className="animate-fade-up">
@@ -126,23 +145,23 @@ export default function PatientDetail() {
               {patient.telefone
                 ? <a href={`tel:${patient.telefone}`} className="hover:text-blue-500 transition-colors">{patient.telefone}</a>
                 : 'Sem telefone'}
-              {patient.dataNascimento ? ` · ${calcAge(patient.dataNascimento)} anos` : ''}
+              {patient.dataNascimento ? ` · ${calculateAge(patient.dataNascimento)} anos` : ''}
               {patient.convenio ? ` · ${patient.convenio}` : ''}
             </p>
             <div className="flex gap-2 mt-3 flex-wrap">
-              {emAberto > 0
-                ? <Badge variant="red">💰 Em aberto: {fmtR(emAberto)}</Badge>
+              {amountOwed > 0
+                ? <Badge variant="red">💰 Em aberto: {formatCurrency(amountOwed)}</Badge>
                 : <Badge variant="green">✓ Sem pendências</Badge>
               }
               {treatments.length > 0 && (
-                <Badge variant="blue">🦷 {doneTr}/{treatments.length} procedimentos</Badge>
+                <Badge variant="blue">🦷 {completedTreatments}/{treatments.length} procedimentos</Badge>
               )}
             </div>
           </div>
           <div className="flex gap-2 shrink-0 flex-wrap">
-            {waPhone && (
+            {whatsappPhone && (
               <a
-                href={`https://wa.me/${waPhone}?text=${waMsg}`}
+                href={`https://wa.me/${whatsappPhone}?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-secondary btn-sm"
@@ -153,7 +172,7 @@ export default function PatientDetail() {
             )}
             <button className="btn-secondary btn-sm" onClick={() => setDocModal('receita')}>📄 Receita</button>
             <button className="btn-secondary btn-sm" onClick={() => setDocModal('atestado')}>📋 Atestado</button>
-            <button className="btn-secondary btn-sm" onClick={() => printPatientFile(patient, treatments, payments, evolutions)}>🖨️ Ficha</button>
+            <button className="btn-secondary btn-sm" onClick={printPatientFile}>🖨️ Ficha</button>
             <button className="btn-secondary btn-sm" onClick={() => setEditing(true)}>✏️ Editar</button>
             <button className="btn-danger" onClick={handleDelete}>🗑️</button>
           </div>
@@ -162,27 +181,27 @@ export default function PatientDetail() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-5">
-        {TABS.map(t => (
+        {TABS.map(tab => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all duration-150
-              ${tab === t.id
+              ${activeTab === tab.id
                 ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
           >
-            <span>{t.icon}</span>
-            {t.label}
+            <span>{tab.icon}</span>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {tab === 'ficha'       && <FichaTab patient={patient} />}
-      {tab === 'odontograma' && <OdontogramaTab patientId={id} />}
-      {tab === 'tratamento'  && <TratamentoTab patientId={id} treatments={treatments} onRefresh={loadAll} />}
-      {tab === 'financeiro'  && <FinanceiroTab patientId={id} patient={patient} treatments={treatments} payments={payments} onRefresh={loadAll} />}
-      {tab === 'evolucoes'   && <EvolusaoTab patientId={id} evolutions={evolutions} onRefresh={loadAll} />}
+      {activeTab === 'ficha'       && <FichaTab patient={patient} />}
+      {activeTab === 'odontograma' && <OdontogramaTab patientId={id} />}
+      {activeTab === 'tratamento'  && <TratamentoTab patientId={id} treatments={treatments} onRefresh={loadAll} />}
+      {activeTab === 'financeiro'  && <FinanceiroTab patientId={id} patient={patient} treatments={treatments} payments={payments} onRefresh={loadAll} />}
+      {activeTab === 'evolucoes'   && <EvolusaoTab patientId={id} evolutions={evolutions} onRefresh={loadAll} />}
 
       {editing && <PatientForm initial={patient} onSave={handleEdit} onClose={() => setEditing(false)} />}
 
@@ -191,14 +210,29 @@ export default function PatientDetail() {
           type={docModal}
           patient={patient}
           clinic={clinic}
+          receitaRef={receitaRef}
+          atestadoRef={atestadoRef}
+          printReceita={printReceita}
+          printAtestado={printAtestado}
           onClose={() => setDocModal(null)}
         />
       )}
+
+      {/* Hidden print components — rendered in DOM but invisible, activated by usePrint */}
+      <div style={{ display: 'none' }}>
+        <PatientFilePrint
+          ref={patientFileRef}
+          patient={patient}
+          treatments={treatments}
+          payments={payments}
+          evolutions={evolutions}
+        />
+      </div>
     </div>
   )
 }
 
-function DocModal({ type, patient, clinic, onClose }) {
+function DocModal({ type, patient, clinic, receitaRef, atestadoRef, printReceita, printAtestado, onClose }) {
   const isReceita = type === 'receita'
   const [medicines, setMedicines] = useState('')
   const [instructions, setInstructions] = useState('')
@@ -206,8 +240,11 @@ function DocModal({ type, patient, clinic, onClose }) {
   const [reason, setReason] = useState('')
 
   function handlePrint() {
-    if (isReceita) printReceita(patient, clinic, medicines, instructions)
-    else printAtestado(patient, clinic, days, reason)
+    if (isReceita) {
+      printReceita()
+    } else {
+      printAtestado()
+    }
     onClose()
   }
 
@@ -240,6 +277,15 @@ function DocModal({ type, patient, clinic, onClose }) {
               placeholder="Não ingerir álcool durante o tratamento..."
             />
           </div>
+          <div style={{ display: 'none' }}>
+            <ReceitaPrint
+              ref={receitaRef}
+              patient={patient}
+              clinic={clinic}
+              medicines={medicines}
+              instructions={instructions}
+            />
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -264,6 +310,15 @@ function DocModal({ type, patient, clinic, onClose }) {
           </div>
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
             O atestado será gerado em nome de <strong className="text-slate-700 dark:text-slate-300">{patient.nome}</strong> para {days} dia{+days !== 1 ? 's' : ''} de repouso.
+          </div>
+          <div style={{ display: 'none' }}>
+            <AtestadoPrint
+              ref={atestadoRef}
+              patient={patient}
+              clinic={clinic}
+              days={days}
+              reason={reason}
+            />
           </div>
         </div>
       )}
