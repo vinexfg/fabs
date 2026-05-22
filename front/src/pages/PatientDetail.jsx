@@ -15,6 +15,7 @@ import PatientFilePrint from '../components/patient/print/PatientFilePrint'
 import ReceitaPrint from '../components/patient/print/ReceitaPrint'
 import AtestadoPrint from '../components/patient/print/AtestadoPrint'
 import { usePrint } from '../components/patient/print/usePrint'
+import styles from './PatientDetail.module.css'
 
 const TABS = [
   { id: 'ficha',       label: 'Ficha',       icon: '📋' },
@@ -37,26 +38,22 @@ function calculateAge(dateOfBirth) {
   return age
 }
 
-function stripNonDigits(phoneNumber) {
-  return phoneNumber.replace(/\D/g, '')
-}
-
 export default function PatientDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const toast = useToast()
-  const confirm = useConfirm()
+  const toast    = useToast()
+  const confirm  = useConfirm()
   const { patientFileRef, receitaRef, atestadoRef, printPatientFile, printReceita, printAtestado } = usePrint()
 
-  const [patient, setPatient] = useState(null)
+  const [patient, setPatient]     = useState(null)
   const [treatments, setTreatments] = useState([])
-  const [payments, setPayments] = useState([])
+  const [payments, setPayments]   = useState([])
   const [evolutions, setEvolutions] = useState([])
   const [activeTab, setActiveTab] = useState('ficha')
-  const [editing, setEditing] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [docModal, setDocModal] = useState(null) // 'receita' | 'atestado'
-  const [clinic, setClinic] = useState({})
+  const [editing, setEditing]     = useState(false)
+  const [loading, setLoading]     = useState(true)
+  const [docModal, setDocModal]   = useState(null)
+  const [clinic, setClinic]       = useState({})
 
   useEffect(() => { loadAll() }, [id])
 
@@ -89,9 +86,7 @@ export default function PatientDetail() {
       setPatient(updated)
       toast('Dados atualizados!', 'success')
       setEditing(false)
-    } catch (error) {
-      toast(error.message, 'error')
-    }
+    } catch (error) { toast(error.message, 'error') }
   }
 
   async function handleDelete() {
@@ -101,54 +96,45 @@ export default function PatientDetail() {
       await PatientRepository.remove(id)
       toast('Paciente excluído.')
       navigate('/pacientes')
-    } catch (error) {
-      toast(error.message, 'error')
-    }
+    } catch (error) { toast(error.message, 'error') }
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 text-slate-400 gap-3">
-      <span className="text-2xl animate-spin">⚙️</span>
-      <span className="text-sm font-medium">Carregando...</span>
+    <div className={styles.loading}>
+      <span className={styles.loadingIcon}>⚙️</span>
+      <span className={styles.loadingText}>Carregando...</span>
     </div>
   )
   if (!patient) return null
 
-  const initials = patient.nome.split(' ').map(namePart => namePart[0]).slice(0, 2).join('').toUpperCase()
-  const totalTreatments = treatments.reduce((sum, treatment) => sum + (parseFloat(treatment.valor) || 0), 0)
-  const totalPaid = payments.reduce((sum, payment) => sum + (parseFloat(payment.valor) || 0), 0)
-  const amountOwed = Math.max(0, totalTreatments - totalPaid)
-  const completedTreatments = treatments.filter(treatment => treatment.status === 'concluido').length
-
-  const whatsappPhone = patient.telefone ? `55${stripNonDigits(patient.telefone)}` : null
+  const initials       = patient.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+  const totalTreatments = treatments.reduce((s, t) => s + (parseFloat(t.valor) || 0), 0)
+  const totalPaid      = payments.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const amountOwed     = Math.max(0, totalTreatments - totalPaid)
+  const completedTreatments = treatments.filter(t => t.status === 'concluido').length
+  const whatsappPhone  = patient.telefone ? `55${patient.telefone.replace(/\D/g, '')}` : null
   const whatsappMessage = encodeURIComponent(`Olá ${patient.nome.split(' ')[0]}! Aqui é o consultório ${clinic.clinicName || 'DenteFácil'}.`)
 
   return (
-    <div className="animate-fade-up">
-      <button
-        className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mb-5 font-semibold transition-colors"
-        onClick={() => navigate('/pacientes')}
-      >
-        ← Voltar
-      </button>
+    <div className={styles.page}>
+      <button className={styles.backBtn} onClick={() => navigate('/pacientes')}>← Voltar</button>
 
-      {/* Header card */}
-      <div className="card p-5 mb-5">
-        <div className="flex items-start gap-5">
+      <div className={styles.headerCard}>
+        <div className={styles.headerInner}>
           {patient.foto
-            ? <img src={patient.foto} alt={patient.nome} className="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-md" />
-            : <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-2xl font-bold shrink-0 shadow-md shadow-blue-500/30">{initials}</div>
+            ? <img src={patient.foto} alt={patient.nome} className={styles.patientAvatar} />
+            : <div className={styles.patientAvatarFallback}>{initials}</div>
           }
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">{patient.nome}</h1>
-            <p className="text-sm text-slate-400 mt-1">
+          <div className={styles.patientInfo}>
+            <h1 className={styles.patientName}>{patient.nome}</h1>
+            <p className={styles.patientMeta}>
               {patient.telefone
-                ? <a href={`tel:${patient.telefone}`} className="hover:text-blue-500 transition-colors">{patient.telefone}</a>
+                ? <a href={`tel:${patient.telefone}`} className={styles.phoneLink}>{patient.telefone}</a>
                 : 'Sem telefone'}
               {patient.dataNascimento ? ` · ${calculateAge(patient.dataNascimento)} anos` : ''}
               {patient.convenio ? ` · ${patient.convenio}` : ''}
             </p>
-            <div className="flex gap-2 mt-3 flex-wrap">
+            <div className={styles.badgeRow}>
               {amountOwed > 0
                 ? <Badge variant="red">💰 Em aberto: {formatCurrency(amountOwed)}</Badge>
                 : <Badge variant="green">✓ Sem pendências</Badge>
@@ -158,15 +144,9 @@ export default function PatientDetail() {
               )}
             </div>
           </div>
-          <div className="flex gap-2 shrink-0 flex-wrap">
+          <div className={styles.actions}>
             {whatsappPhone && (
-              <a
-                href={`https://wa.me/${whatsappPhone}?text=${whatsappMessage}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-secondary btn-sm"
-                title="WhatsApp"
-              >
+              <a href={`https://wa.me/${whatsappPhone}?text=${whatsappMessage}`} target="_blank" rel="noreferrer" className="btn-secondary btn-sm" title="WhatsApp">
                 💬 WhatsApp
               </a>
             )}
@@ -179,17 +159,12 @@ export default function PatientDetail() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-5">
+      <div className={styles.tabBar}>
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all duration-150
-              ${activeTab === tab.id
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
+            className={activeTab === tab.id ? styles.tabActive : styles.tab}
           >
             <span>{tab.icon}</span>
             {tab.label}
@@ -218,15 +193,8 @@ export default function PatientDetail() {
         />
       )}
 
-      {/* Hidden print components — rendered in DOM but invisible, activated by usePrint */}
       <div style={{ display: 'none' }}>
-        <PatientFilePrint
-          ref={patientFileRef}
-          patient={patient}
-          treatments={treatments}
-          payments={payments}
-          evolutions={evolutions}
-        />
+        <PatientFilePrint ref={patientFileRef} patient={patient} treatments={treatments} payments={payments} evolutions={evolutions} />
       </div>
     </div>
   )
@@ -240,11 +208,7 @@ function DocModal({ type, patient, clinic, receitaRef, atestadoRef, printReceita
   const [reason, setReason] = useState('')
 
   function handlePrint() {
-    if (isReceita) {
-      printReceita()
-    } else {
-      printAtestado()
-    }
+    isReceita ? printReceita() : printAtestado()
     onClose()
   }
 
@@ -256,7 +220,7 @@ function DocModal({ type, patient, clinic, receitaRef, atestadoRef, printReceita
       saveLabel="🖨️ Imprimir"
     >
       {isReceita ? (
-        <div className="flex flex-col gap-4">
+        <div className={styles.docContent}>
           <div>
             <label className="label">Medicamentos prescritos</label>
             <textarea
@@ -278,47 +242,24 @@ function DocModal({ type, patient, clinic, receitaRef, atestadoRef, printReceita
             />
           </div>
           <div style={{ display: 'none' }}>
-            <ReceitaPrint
-              ref={receitaRef}
-              patient={patient}
-              clinic={clinic}
-              medicines={medicines}
-              instructions={instructions}
-            />
+            <ReceitaPrint ref={receitaRef} patient={patient} clinic={clinic} medicines={medicines} instructions={instructions} />
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className={styles.docContent}>
           <div>
             <label className="label">Dias de atestado</label>
-            <input
-              className="input mt-1.5"
-              type="number"
-              min="1"
-              value={days}
-              onChange={e => setDays(e.target.value)}
-            />
+            <input className="input mt-1.5" type="number" min="1" value={days} onChange={e => setDays(e.target.value)} />
           </div>
           <div>
             <label className="label">Motivo (opcional)</label>
-            <input
-              className="input mt-1.5"
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              placeholder="Ex: pós-operatório de extração dentária"
-            />
+            <input className="input mt-1.5" value={reason} onChange={e => setReason(e.target.value)} placeholder="Ex: pós-operatório de extração dentária" />
           </div>
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+          <div className={styles.docInfo}>
             O atestado será gerado em nome de <strong className="text-slate-700 dark:text-slate-300">{patient.nome}</strong> para {days} dia{+days !== 1 ? 's' : ''} de repouso.
           </div>
           <div style={{ display: 'none' }}>
-            <AtestadoPrint
-              ref={atestadoRef}
-              patient={patient}
-              clinic={clinic}
-              days={days}
-              reason={reason}
-            />
+            <AtestadoPrint ref={atestadoRef} patient={patient} clinic={clinic} days={days} reason={reason} />
           </div>
         </div>
       )}

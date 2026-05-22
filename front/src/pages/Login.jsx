@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import styles from './Login.module.css'
 
 export default function Login() {
   const [password, setPassword] = useState('')
@@ -24,18 +25,16 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-3xl shadow-lg shadow-blue-500/30 mx-auto mb-4">
-            🦷
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">DenteFácil</h1>
-          <p className="text-sm text-slate-400 mt-1">Gestão de Pacientes</p>
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <div className={styles.logoSection}>
+          <div className={styles.logoIcon}>🦷</div>
+          <h1 className={styles.title}>DenteFácil</h1>
+          <p className={styles.subtitle}>Gestão de Pacientes</p>
         </div>
 
-        <div className="card p-6">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className={styles.formCard}>
+          <form onSubmit={handleSubmit} className={styles.form}>
             <div>
               <label className="label">Senha de acesso</label>
               <input
@@ -49,22 +48,18 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl px-4 py-3">
-                <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+              <div className={styles.errorBox}>
+                <p className={styles.errorText}>{error}</p>
               </div>
             )}
 
-            <button
-              type="submit"
-              className="btn-primary w-full justify-center"
-              disabled={loading || !password}
-            >
+            <button type="submit" className="btn-primary w-full justify-center" disabled={loading || !password}>
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-4">
+        <p className={styles.hint}>
           Senha padrão: <span className="font-semibold">1234</span>
         </p>
       </div>

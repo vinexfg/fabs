@@ -1,0 +1,65 @@
+.page {
+  @apply animate-fade-up max-w-2xl;
+}
+
+.header {
+  @apply flex items-center justify-between mb-7;
+}
+
+.title {
+  @apply text-2xl font-bold text-slate-900 dark:text-white;
+}
+
+.subtitle {
+  @apply text-sm text-slate-400 mt-0.5;
+}
+
+.section {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm
+         p-6 mb-5;
+}
+
+.sectionTitle {
+  @apply text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4;
+}
+
+.formGrid {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.formGap {
+  @apply flex flex-col gap-4;
+}
+
+.formFooter {
+  @apply mt-5 flex justify-end;
+}
+
+.templateRow {
+  @apply flex gap-2 mb-4;
+}
+
+.templateList {
+  @apply flex flex-wrap gap-2;
+}
+
+.templateChip {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold
+         bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300;
+}
+
+.templateChipDelete {
+  @apply text-slate-400 hover:text-red-500 transition-colors leading-none;
+}
+
+.templateEmpty {
+  @apply text-sm text-slate-400 text-center py-4;
+}
+
+.backupActions {
+  @apply flex gap-3 flex-wrap;
+}
+
+.backupNote {
+  @apply text-xs text-slate-400 mt-3;
+}

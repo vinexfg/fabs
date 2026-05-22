@@ -1,0 +1,44 @@
+.page {
+  @apply min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4;
+}
+
+.container {
+  @apply w-full max-w-sm;
+}
+
+.logoSection {
+  @apply text-center mb-8;
+}
+
+.logoIcon {
+  @apply w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700
+         flex items-center justify-center text-3xl shadow-lg shadow-blue-500/30 mx-auto mb-4;
+}
+
+.title {
+  @apply text-2xl font-bold text-slate-900 dark:text-white;
+}
+
+.subtitle {
+  @apply text-sm text-slate-400 mt-1;
+}
+
+.formCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6;
+}
+
+.form {
+  @apply flex flex-col gap-4;
+}
+
+.errorBox {
+  @apply bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl px-4 py-3;
+}
+
+.errorText {
+  @apply text-sm text-red-600 dark:text-red-400 font-medium;
+}
+
+.hint {
+  @apply text-center text-xs text-slate-400 mt-4;
+}

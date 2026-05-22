@@ -1,0 +1,280 @@
+.page {
+  @apply animate-fade-up;
+}
+
+.header {
+  @apply flex items-center justify-between mb-7;
+}
+
+.title {
+  @apply text-2xl font-bold text-slate-900 dark:text-white;
+}
+
+.subtitle {
+  @apply text-sm text-slate-400 mt-0.5;
+}
+
+/* Tab bar */
+.tabBar {
+  @apply flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-6 w-fit;
+}
+
+.tab {
+  @apply px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-150
+         text-slate-500 dark:text-slate-400
+         hover:text-slate-700 dark:hover:text-slate-300;
+}
+
+.tabActive {
+  @apply px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-150
+         bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm;
+}
+
+/* Summary stats */
+.statsGrid {
+  @apply grid grid-cols-3 gap-4 mb-7;
+}
+
+.statCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm
+         p-5 flex items-center gap-4;
+}
+
+.statIcon {
+  @apply w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0;
+}
+
+.statValue {
+  @apply text-2xl font-extrabold;
+}
+
+.statLabel {
+  @apply text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5;
+}
+
+/* Charts */
+.chartsGrid {
+  @apply grid grid-cols-3 gap-5 mb-5;
+}
+
+.chartCard {
+  @apply col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5;
+}
+
+.chartTitle {
+  @apply text-sm font-bold text-slate-700 dark:text-slate-300 mb-5;
+}
+
+.chartEmpty {
+  @apply text-sm text-slate-400 text-center py-8;
+}
+
+.chartBars {
+  @apply flex items-end gap-2 h-40;
+}
+
+.chartBarCol {
+  @apply flex-1 flex flex-col items-center gap-1 min-w-0;
+}
+
+.chartBarValue {
+  @apply text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate w-full text-center;
+}
+
+.chartBarFill {
+  @apply w-full rounded-t-lg transition-all duration-500 bg-gradient-to-t from-blue-600 to-blue-400;
+}
+
+.chartBarLabel {
+  @apply text-[10px] text-slate-400 font-medium truncate w-full text-center;
+}
+
+/* Payment method */
+.methodCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5;
+}
+
+.methodTitle {
+  @apply text-sm font-bold text-slate-700 dark:text-slate-300 mb-4;
+}
+
+.methodList {
+  @apply flex flex-col gap-3;
+}
+
+.methodHeader {
+  @apply flex items-center justify-between mb-1;
+}
+
+.methodName {
+  @apply text-xs font-semibold text-slate-600 dark:text-slate-400;
+}
+
+.methodPct {
+  @apply text-xs font-bold text-slate-900 dark:text-slate-100;
+}
+
+.methodTrack {
+  @apply h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden;
+}
+
+.methodFill {
+  @apply h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full;
+}
+
+.methodAmount {
+  @apply text-[10px] text-slate-400 mt-0.5;
+}
+
+/* Recent payments table */
+.tableCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden;
+}
+
+.tableHeaderRow {
+  @apply px-5 py-4 border-b border-slate-100 dark:border-slate-800;
+}
+
+.tableTitle {
+  @apply text-sm font-bold text-slate-700 dark:text-slate-300;
+}
+
+.tableEmpty {
+  @apply text-sm text-slate-400 text-center py-8;
+}
+
+.tableRow {
+  @apply flex items-center justify-between px-5 py-3.5
+         border-b border-slate-100 dark:border-slate-800 last:border-0
+         hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors;
+}
+
+.tableRowName {
+  @apply text-sm font-semibold text-slate-900 dark:text-slate-100;
+}
+
+.tableRowMeta {
+  @apply text-xs text-slate-400 mt-0.5;
+}
+
+.tableRowPatient {
+  @apply font-medium text-blue-500 dark:text-blue-400;
+}
+
+.tableRowValue {
+  @apply text-sm font-extrabold text-emerald-600 dark:text-emerald-400;
+}
+
+/* Inadimplência */
+.inadGrid {
+  @apply grid grid-cols-2 gap-4 mb-5;
+}
+
+.inadCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm
+         p-5 flex items-center gap-4;
+}
+
+.inadEmpty {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm
+         p-12 text-center;
+}
+
+.inadEmptyIcon {
+  @apply text-5xl mb-3 opacity-60;
+}
+
+.inadEmptyTitle {
+  @apply text-base font-bold text-slate-700 dark:text-slate-300;
+}
+
+.inadEmptyText {
+  @apply text-sm text-slate-400 mt-1;
+}
+
+.inadTableCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden;
+}
+
+.inadTableHeader {
+  @apply px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between;
+}
+
+.inadTableTitle {
+  @apply text-sm font-bold text-slate-700 dark:text-slate-300;
+}
+
+.inadCobrAll {
+  @apply text-xs font-semibold text-green-600 dark:text-green-400 hover:text-green-700 transition-colors;
+}
+
+.inadRow {
+  @apply flex items-center gap-4 px-5 py-4
+         border-b border-slate-100 dark:border-slate-800 last:border-0
+         hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors;
+}
+
+.inadPatientInfo {
+  @apply flex-1 min-w-0 cursor-pointer;
+}
+
+.inadPatientName {
+  @apply text-sm font-semibold text-slate-900 dark:text-slate-100
+         hover:text-blue-600 dark:hover:text-blue-400 transition-colors;
+}
+
+.inadPatientMeta {
+  @apply text-xs text-slate-400 mt-0.5;
+}
+
+.inadProgressRow {
+  @apply flex items-center gap-2 mt-2;
+}
+
+.inadProgressTrack {
+  @apply flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden;
+}
+
+.inadProgressFill {
+  @apply h-full bg-emerald-500 rounded-full;
+}
+
+.inadProgressPct {
+  @apply text-[10px] text-slate-400 font-semibold shrink-0;
+}
+
+.inadAmount {
+  @apply text-right shrink-0;
+}
+
+.inadAmountValue {
+  @apply text-base font-extrabold text-red-600 dark:text-red-400;
+}
+
+.inadAmountTotal {
+  @apply text-[10px] text-slate-400 mt-0.5;
+}
+
+.inadWaBtn {
+  @apply inline-flex items-center justify-center
+         px-3 py-1.5 text-xs font-semibold rounded-full
+         bg-green-500 hover:bg-green-600 text-white
+         transition-colors shrink-0 shadow-sm shadow-green-500/30;
+}
+
+.inadWaAbsent {
+  @apply w-8;
+}
+
+/* Loading */
+.loading {
+  @apply flex items-center justify-center h-64 text-slate-400 gap-3;
+}
+
+.loadingIcon {
+  @apply text-2xl animate-spin;
+}
+
+.loadingText {
+  @apply text-sm font-medium;
+}

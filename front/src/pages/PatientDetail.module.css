@@ -1,0 +1,94 @@
+.page {
+  @apply animate-fade-up;
+}
+
+.backBtn {
+  @apply flex items-center gap-1.5 text-sm font-semibold mb-5
+         text-slate-400 hover:text-slate-700 dark:hover:text-slate-200
+         transition-colors;
+}
+
+/* Header card */
+.headerCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm
+         p-5 mb-5;
+}
+
+.headerInner {
+  @apply flex items-start gap-5;
+}
+
+.patientAvatar {
+  @apply w-16 h-16 rounded-2xl object-cover shrink-0 shadow-md;
+}
+
+.patientAvatarFallback {
+  @apply w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600
+         text-white flex items-center justify-center text-2xl font-bold
+         shrink-0 shadow-md shadow-blue-500/30;
+}
+
+.patientInfo {
+  @apply flex-1 min-w-0;
+}
+
+.patientName {
+  @apply text-xl font-bold text-slate-900 dark:text-white;
+}
+
+.patientMeta {
+  @apply text-sm text-slate-400 mt-1;
+}
+
+.phoneLink {
+  @apply hover:text-blue-500 transition-colors;
+}
+
+.badgeRow {
+  @apply flex gap-2 mt-3 flex-wrap;
+}
+
+.actions {
+  @apply flex gap-2 shrink-0 flex-wrap;
+}
+
+/* Tab bar */
+.tabBar {
+  @apply flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-5;
+}
+
+.tab {
+  @apply flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold
+         rounded-xl transition-all duration-150
+         text-slate-500 dark:text-slate-400
+         hover:text-slate-700 dark:hover:text-slate-300;
+}
+
+.tabActive {
+  @apply flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold
+         rounded-xl transition-all duration-150
+         bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm;
+}
+
+/* Loading */
+.loading {
+  @apply flex items-center justify-center h-64 text-slate-400 gap-3;
+}
+
+.loadingIcon {
+  @apply text-2xl animate-spin;
+}
+
+.loadingText {
+  @apply text-sm font-medium;
+}
+
+/* Doc modal */
+.docContent {
+  @apply flex flex-col gap-4;
+}
+
+.docInfo {
+  @apply bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4
+         text-sm text-slate-500 dark:text-slate-400 leading-relaxed;
+}

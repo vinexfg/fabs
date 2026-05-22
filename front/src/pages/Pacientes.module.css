@@ -1,0 +1,80 @@
+.page {
+  @apply animate-fade-up;
+}
+
+.header {
+  @apply flex items-center justify-between mb-7;
+}
+
+.title {
+  @apply text-2xl font-bold text-slate-900 dark:text-white;
+}
+
+.subtitle {
+  @apply text-sm text-slate-400 mt-0.5;
+}
+
+.searchWrapper {
+  @apply mb-4 relative;
+}
+
+.searchIcon {
+  @apply absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400;
+}
+
+.chipRow {
+  @apply flex flex-wrap gap-2 mb-5;
+}
+
+.chip {
+  @apply text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-150
+         bg-slate-100 dark:bg-slate-800
+         text-slate-600 dark:text-slate-400
+         hover:bg-slate-200 dark:hover:bg-slate-700;
+}
+
+.chipActive {
+  @apply text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-150
+         bg-blue-500 text-white shadow-sm shadow-blue-500/30;
+}
+
+.list {
+  @apply flex flex-col gap-2;
+}
+
+.patientCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl shadow-sm
+         border border-slate-200 dark:border-slate-800
+         px-5 py-4 flex items-center gap-4 cursor-pointer
+         hover:border-blue-300 dark:hover:border-blue-600
+         hover:shadow-md hover:shadow-blue-500/5
+         transition-all duration-150;
+}
+
+.avatar {
+  @apply w-11 h-11 rounded-full object-cover shrink-0;
+}
+
+.avatarFallback {
+  @apply w-11 h-11 rounded-full bg-gradient-to-br from-blue-400 to-blue-600
+         text-white flex items-center justify-center font-bold text-sm
+         shrink-0 shadow-sm shadow-blue-500/30;
+}
+
+.patientInfo {
+  @apply flex-1 min-w-0;
+}
+
+.patientName {
+  @apply font-semibold text-slate-900 dark:text-slate-100;
+}
+
+.patientMeta {
+  @apply text-xs text-slate-400 mt-0.5;
+}
+
+.arrow {
+  @apply text-slate-300 dark:text-slate-600
+         group-hover:text-blue-400 dark:group-hover:text-blue-500
+         transition-colors font-bold;
+}

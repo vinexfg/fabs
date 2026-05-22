@@ -1,10 +1,13 @@
 import React from 'react'
+import styles from './FichaTab.module.css'
 
 function Row({ label, value }) {
   return (
-    <div className="flex gap-3 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 w-36 shrink-0 pt-0.5 uppercase tracking-wide">{label}</span>
-      <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">{value || <span className="text-slate-300 dark:text-slate-600">—</span>}</span>
+    <div className={styles.row}>
+      <span className={styles.rowLabel}>{label}</span>
+      <span className={styles.rowValue}>
+        {value || <span className={styles.rowEmpty}>—</span>}
+      </span>
     </div>
   )
 }
@@ -24,11 +27,11 @@ function fmtDate(d) {
 
 export default function FichaTab({ patient: p }) {
   return (
-    <div className="grid grid-cols-1 gap-4">
-      <div className="card p-5">
-        <div className="flex items-center gap-2 mb-4">
+    <div className={styles.sections}>
+      <div className={styles.card}>
+        <div className={styles.cardTitleRow}>
           <span className="text-lg">👤</span>
-          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Dados Pessoais</p>
+          <p className={styles.cardTitle}>Dados Pessoais</p>
         </div>
         <Row label="Nome" value={p.nome} />
         <Row label="Nascimento" value={p.dataNascimento ? `${fmtDate(p.dataNascimento)} · ${calcAge(p.dataNascimento)} anos` : null} />
@@ -39,10 +42,10 @@ export default function FichaTab({ patient: p }) {
         <Row label="Convênio" value={p.convenio || 'Particular'} />
       </div>
 
-      <div className="card p-5">
-        <div className="flex items-center gap-2 mb-4">
+      <div className={styles.card}>
+        <div className={styles.cardTitleRow}>
           <span className="text-lg">🏥</span>
-          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Histórico Médico</p>
+          <p className={styles.cardTitle}>Histórico Médico</p>
         </div>
         <Row label="Alergias" value={p.alergias} />
         <Row label="Medicamentos" value={p.medicamentos} />

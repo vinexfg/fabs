@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { PatientRepository, AppointmentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import PatientForm from '../components/patient/PatientForm'
-import Badge from '../components/Badge'
+import styles from './Dashboard.module.css'
 
-const STATUS_APPT = {
-  agendado:  { label: 'Agendado',  cls: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  realizado: { label: 'Realizado', cls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-  cancelado: { label: 'Cancelado', cls: 'bg-slate-100 dark:bg-slate-800 text-slate-500' },
-  faltou:    { label: 'Faltou',    cls: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' },
+const STATUS_BADGE = {
+  agendado:  styles.statusAgendado,
+  realizado: styles.statusRealizado,
+  cancelado: styles.statusCancelado,
+  faltou:    styles.statusFaltou,
+}
+
+const STATUS_LABELS = {
+  agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou',
 }
 
 export default function Dashboard() {
@@ -73,11 +77,11 @@ export default function Dashboard() {
   const thisMonth = new Date().toISOString().slice(0, 7)
 
   return (
-    <div className="animate-fade-up">
-      <div className="flex items-center justify-between mb-7">
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <h1 className={styles.title}>Dashboard</h1>
+          <p className={styles.subtitle}>
             {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
@@ -86,78 +90,55 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-7">
-        <StatCard
-          label="Total de Pacientes"
-          value={patients.length}
-          icon="👥"
-          bg="bg-blue-50 dark:bg-blue-500/10"
-          text="text-blue-600 dark:text-blue-400"
-        />
-        <StatCard
-          label="Cadastros este mês"
-          value={patients.filter(p => p.criadoEm?.startsWith(thisMonth)).length}
-          icon="🆕"
-          bg="bg-violet-50 dark:bg-violet-500/10"
-          text="text-violet-600 dark:text-violet-400"
-        />
-        <StatCard
-          label="Consultas hoje"
-          value={todayAppts.length}
-          icon="📅"
-          bg="bg-emerald-50 dark:bg-emerald-500/10"
-          text="text-emerald-600 dark:text-emerald-400"
-        />
+      <div className={styles.statsGrid}>
+        <StatCard label="Total de Pacientes" value={patients.length} icon="👥"
+          bg="bg-blue-50 dark:bg-blue-500/10" text="text-blue-600 dark:text-blue-400" />
+        <StatCard label="Cadastros este mês" value={patients.filter(p => p.criadoEm?.startsWith(thisMonth)).length}
+          icon="🆕" bg="bg-violet-50 dark:bg-violet-500/10" text="text-violet-600 dark:text-violet-400" />
+        <StatCard label="Consultas hoje" value={todayAppts.length} icon="📅"
+          bg="bg-emerald-50 dark:bg-emerald-500/10" text="text-emerald-600 dark:text-emerald-400" />
       </div>
 
-      {/* Today's appointments */}
-      <div className="card p-5 mb-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Consultas de Hoje</h2>
-          <button onClick={() => navigate('/agenda')} className="text-xs text-blue-500 hover:text-blue-600 font-semibold transition-colors">
-            Ver agenda →
-          </button>
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Consultas de Hoje</h2>
+          <button className={styles.sectionLink} onClick={() => navigate('/agenda')}>Ver agenda →</button>
         </div>
         {todayAppts.length === 0
           ? <Empty icon="📅" text="Nenhuma consulta agendada para hoje." />
-          : <div className="flex flex-col gap-2">
+          : <div className={styles.list}>
               {todayAppts.map(a => (
-                <div
-                  key={a.id}
-                  className="flex items-center gap-4 p-3.5 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all duration-150 group"
-                  onClick={() => navigate(`/pacientes/${a.patientId}`)}
-                >
-                  <div className="text-center min-w-[52px]">
-                    <p className="text-lg font-extrabold text-blue-600 dark:text-blue-400 leading-none">{a.time?.slice(0, 5) || '--'}</p>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">{a.duration || 60}min</p>
+                <div key={a.id} className={`group ${styles.row}`} onClick={() => navigate(`/pacientes/${a.patientId}`)}>
+                  <div className={styles.timeBlock}>
+                    <p className={`${styles.timeValue} text-blue-600 dark:text-blue-400`}>{a.time?.slice(0, 5) || '--'}</p>
+                    <p className={styles.timeDuration}>{a.duration || 60}min</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{a.patientNome}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{a.type || 'Consulta'}</p>
+                  <div className={styles.rowInfo}>
+                    <p className={styles.rowName}>{a.patientNome}</p>
+                    <p className={styles.rowSub}>{a.type || 'Consulta'}</p>
                   </div>
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_APPT[a.status]?.cls || ''}`}>
-                    {STATUS_APPT[a.status]?.label || a.status}
+                  <span className={`${styles.statusBadge} ${STATUS_BADGE[a.status] || ''}`}>
+                    {STATUS_LABELS[a.status] || a.status}
                   </span>
-                  <span className="text-slate-300 dark:text-slate-600 group-hover:text-blue-400 dark:group-hover:text-blue-500 transition-colors text-sm">→</span>
+                  <span className={styles.arrow}>→</span>
                 </div>
               ))}
             </div>
         }
       </div>
 
-      {/* Tomorrow's reminders */}
       {tomorrowAppts.length > 0 && (
-        <div className="card p-5 mb-5 border-amber-200 dark:border-amber-500/30">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+        <div className={styles.reminderSection}>
+          <div className={styles.sectionHeader}>
+            <div className={styles.reminderTitleRow}>
               <span className="text-base">🔔</span>
-              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Lembretes de Amanhã</h2>
-              <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
+              <h2 className={styles.sectionTitle}>Lembretes de Amanhã</h2>
+              <span className={styles.reminderBadge}>
                 {tomorrowAppts.length} consulta{tomorrowAppts.length !== 1 ? 's' : ''}
               </span>
             </div>
             <button
-              className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 transition-colors"
+              className={styles.reminderAllBtn}
               onClick={() => {
                 const links = tomorrowAppts.filter(a => buildWaLink(a))
                 if (links.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
@@ -169,38 +150,30 @@ export default function Dashboard() {
               Enviar todos →
             </button>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className={styles.list}>
             {tomorrowAppts.map(a => {
               const waLink = buildWaLink(a)
               const sent = sentReminders.has(a.id)
               return (
-                <div key={a.id} className="flex items-center gap-4 p-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all duration-150">
-                  <div className="text-center min-w-[52px]">
-                    <p className="text-lg font-extrabold text-amber-600 dark:text-amber-400 leading-none">{a.time?.slice(0, 5) || '--'}</p>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">{a.duration || 60}min</p>
+                <div key={a.id} className={styles.reminderRow}>
+                  <div className={styles.timeBlock}>
+                    <p className={`${styles.timeValue} text-amber-600 dark:text-amber-400`}>{a.time?.slice(0, 5) || '--'}</p>
+                    <p className={styles.timeDuration}>{a.duration || 60}min</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{a.patientNome}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {a.patientTelefone || <span className="text-red-400">Sem telefone</span>}
+                  <div className={styles.rowInfo}>
+                    <p className={styles.rowName}>{a.patientNome}</p>
+                    <p className={styles.rowSub}>
+                      {a.patientTelefone || <span className={styles.noPhone}>Sem telefone</span>}
                       {a.type ? ` · ${a.type}` : ''}
                     </p>
                   </div>
                   {waLink
-                    ? <a
-                        href={waLink}
-                        target="_blank"
-                        rel="noreferrer"
+                    ? <a href={waLink} target="_blank" rel="noreferrer"
                         onClick={() => markSent(a.id)}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-150 shrink-0
-                          ${sent
-                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-green-500 hover:bg-green-600 text-white shadow-sm shadow-green-500/30'
-                          }`}
-                      >
+                        className={sent ? styles.waSent : styles.waSend}>
                         {sent ? '✓ Enviado' : '💬 Enviar'}
                       </a>
-                    : <span className="text-xs text-slate-300 dark:text-slate-600 shrink-0">Sem telefone</span>
+                    : <span className={styles.waAbsent}>Sem telefone</span>
                   }
                 </div>
               )
@@ -209,16 +182,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Pacientes Recentes</h2>
-          <button onClick={() => navigate('/pacientes')} className="text-xs text-blue-500 hover:text-blue-600 font-semibold transition-colors">
-            Ver todos →
-          </button>
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Pacientes Recentes</h2>
+          <button className={styles.sectionLink} onClick={() => navigate('/pacientes')}>Ver todos →</button>
         </div>
         {recent.length === 0
           ? <Empty icon="👤" text='Nenhum paciente ainda. Clique em "Novo Paciente" para começar.' />
-          : <div className="flex flex-col gap-2">
+          : <div className={styles.list}>
               {recent.map(p => <PatientRow key={p.id} patient={p} onClick={() => navigate(`/pacientes/${p.id}`)} />)}
             </div>
         }
@@ -231,13 +202,11 @@ export default function Dashboard() {
 
 function StatCard({ label, value, icon, bg, text }) {
   return (
-    <div className="card p-5 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-2xl ${bg} flex items-center justify-center text-2xl shrink-0`}>
-        {icon}
-      </div>
+    <div className={styles.statCard}>
+      <div className={`${styles.statIcon} ${bg}`}>{icon}</div>
       <div>
-        <p className={`text-3xl font-extrabold ${text}`}>{value}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{label}</p>
+        <p className={`${styles.statValue} ${text}`}>{value}</p>
+        <p className={styles.statLabel}>{label}</p>
       </div>
     </div>
   )
@@ -246,27 +215,24 @@ function StatCard({ label, value, icon, bg, text }) {
 export function PatientRow({ patient: p, onClick }) {
   const initials = p.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
   return (
-    <div
-      className="flex items-center gap-4 p-3.5 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all duration-150 group"
-      onClick={onClick}
-    >
+    <div className={`group ${styles.row}`} onClick={onClick}>
       {p.foto
-        ? <img src={p.foto} alt={p.nome} className="w-10 h-10 rounded-full object-cover shrink-0" />
-        : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm shadow-blue-500/30">{initials}</div>
+        ? <img src={p.foto} alt={p.nome} className={styles.avatar} />
+        : <div className={styles.avatarFallback}>{initials}</div>
       }
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{p.nome}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{p.telefone || 'Sem telefone'}</p>
+      <div className={styles.rowInfo}>
+        <p className={styles.rowName}>{p.nome}</p>
+        <p className={styles.rowSub}>{p.telefone || 'Sem telefone'}</p>
       </div>
-      <span className="text-slate-300 dark:text-slate-600 group-hover:text-blue-400 dark:group-hover:text-blue-500 transition-colors text-sm">→</span>
+      <span className={styles.arrow}>→</span>
     </div>
   )
 }
 
 export function Empty({ icon, text }) {
   return (
-    <div className="text-center py-12 text-slate-400 dark:text-slate-600">
-      <div className="text-5xl mb-3 opacity-60">{icon}</div>
+    <div className={styles.empty}>
+      <div className={styles.emptyIcon}>{icon}</div>
       <p className="text-sm">{text}</p>
     </div>
   )

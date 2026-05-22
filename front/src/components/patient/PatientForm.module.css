@@ -1,0 +1,43 @@
+.photoRow {
+  @apply flex items-center gap-4 mb-5;
+}
+
+.photoTrigger {
+  @apply w-16 h-16 rounded-2xl overflow-hidden shrink-0 cursor-pointer
+         bg-slate-100 dark:bg-slate-800
+         flex items-center justify-center
+         border-2 border-dashed border-slate-300 dark:border-slate-600
+         hover:border-blue-400 transition-colors;
+}
+
+.photoImg {
+  @apply w-full h-full object-cover;
+}
+
+.photoPlaceholder {
+  @apply text-2xl text-slate-400;
+}
+
+.photoLabel {
+  @apply text-sm font-semibold text-slate-700 dark:text-slate-300;
+}
+
+.photoChangeBtn {
+  @apply text-xs text-blue-500 hover:text-blue-600 font-semibold mt-1 transition-colors;
+}
+
+.photoRemoveBtn {
+  @apply text-xs text-red-400 hover:text-red-500 font-semibold mt-1 ml-3 transition-colors;
+}
+
+.formGrid {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.divider {
+  @apply my-5 border-t border-slate-100 dark:border-slate-800;
+}
+
+.sectionLabel {
+  @apply text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4;
+}

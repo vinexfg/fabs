@@ -5,6 +5,7 @@ import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
 import { exportPaymentsCSV } from '../../utils/exportCsv'
+import styles from './FinanceiroTab.module.css'
 
 const FORMAS = {
   pix: 'PIX', dinheiro: 'Dinheiro',
@@ -26,12 +27,12 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ descricao: '', valor: '', data: today(), forma: 'pix' })
   const toast = useToast()
+  const confirm = useConfirm()
 
   const totalTrat = treatments.reduce((s, t) => s + (parseFloat(t.valor) || 0), 0)
   const totalPago = payments.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
   const emAberto = Math.max(0, totalTrat - totalPago)
 
-  const confirm = useConfirm()
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
   async function handleSave() {
@@ -53,24 +54,24 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="card p-4 text-center">
-          <p className="text-xs font-semibold text-blue-500 dark:text-blue-400 mb-1.5 uppercase tracking-wide">Total</p>
-          <p className="text-xl font-extrabold text-blue-600 dark:text-blue-400">{fmtR(totalTrat)}</p>
+      <div className={styles.summaryGrid}>
+        <div className={styles.summaryCard}>
+          <p className={`${styles.summaryLabel} text-blue-500 dark:text-blue-400`}>Total</p>
+          <p className={`${styles.summaryValue} text-blue-600 dark:text-blue-400`}>{fmtR(totalTrat)}</p>
         </div>
-        <div className="card p-4 text-center">
-          <p className="text-xs font-semibold text-emerald-500 dark:text-emerald-400 mb-1.5 uppercase tracking-wide">Pago</p>
-          <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{fmtR(totalPago)}</p>
+        <div className={styles.summaryCard}>
+          <p className={`${styles.summaryLabel} text-emerald-500 dark:text-emerald-400`}>Pago</p>
+          <p className={`${styles.summaryValue} text-emerald-600 dark:text-emerald-400`}>{fmtR(totalPago)}</p>
         </div>
-        <div className={`card p-4 text-center ${emAberto > 0 ? 'border-red-200 dark:border-red-900/40' : ''}`}>
-          <p className={`text-xs font-semibold mb-1.5 uppercase tracking-wide ${emAberto > 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-400'}`}>Em Aberto</p>
-          <p className={`text-xl font-extrabold ${emAberto > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400'}`}>{fmtR(emAberto)}</p>
+        <div className={emAberto > 0 ? styles.summaryCardDebt : styles.summaryCard}>
+          <p className={`${styles.summaryLabel} ${emAberto > 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-400'}`}>Em Aberto</p>
+          <p className={`${styles.summaryValue} ${emAberto > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400'}`}>{fmtR(emAberto)}</p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Histórico de Pagamentos</p>
-        <div className="flex gap-2">
+      <div className={styles.tableHeader}>
+        <p className={styles.tableTitle}>Histórico de Pagamentos</p>
+        <div className={styles.tableActions}>
           {payments.length > 0 && (
             <button className="btn-secondary btn-sm" onClick={() => exportPaymentsCSV(patient, payments)}>⬇️ CSV</button>
           )}
@@ -78,17 +79,17 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
         </div>
       </div>
 
-      <div className="card overflow-hidden">
+      <div className={styles.tableCard}>
         {payments.length === 0
           ? <Empty icon="💳" text="Nenhum pagamento registrado." />
           : payments.map(payment => (
-              <div key={payment.id} className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <div key={payment.id} className={styles.tableRow}>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{payment.descricao}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{fmtDate(payment.data)} · {FORMAS[payment.forma] || payment.forma}</p>
+                  <p className={styles.tableRowName}>{payment.descricao}</p>
+                  <p className={styles.tableRowMeta}>{fmtDate(payment.data)} · {FORMAS[payment.forma] || payment.forma}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{fmtR(parseFloat(payment.valor))}</span>
+                <div className={styles.tableRowRight}>
+                  <span className={styles.tableRowValue}>{fmtR(parseFloat(payment.valor))}</span>
                   <button className="btn-danger btn-sm" onClick={() => handleDelete(payment.id)}>🗑️</button>
                 </div>
               </div>

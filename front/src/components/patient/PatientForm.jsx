@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react'
 import Modal from '../Modal'
+import styles from './PatientForm.module.css'
 
 const EMPTY = {
   nome: '', dataNascimento: '', cpf: '', telefone: '', email: '',
@@ -43,32 +44,20 @@ export default function PatientForm({ initial = {}, onSave, onClose }) {
 
   return (
     <Modal title={initial.id ? 'Editar Paciente' : 'Novo Paciente'} onClose={onClose} onSave={handleSave}>
-      {/* Photo */}
-      <div className="flex items-center gap-4 mb-5">
-        <div
-          className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center cursor-pointer shrink-0 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-400 transition-colors"
-          onClick={() => fileRef.current.click()}
-        >
+      <div className={styles.photoRow}>
+        <div className={styles.photoTrigger} onClick={() => fileRef.current.click()}>
           {form.foto
-            ? <img src={form.foto} alt="Foto" className="w-full h-full object-cover" />
-            : <span className="text-2xl text-slate-400">📷</span>
+            ? <img src={form.foto} alt="Foto" className={styles.photoImg} />
+            : <span className={styles.photoPlaceholder}>📷</span>
           }
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Foto do paciente</p>
-          <button
-            type="button"
-            className="text-xs text-blue-500 hover:text-blue-600 font-semibold mt-1 transition-colors"
-            onClick={() => fileRef.current.click()}
-          >
+          <p className={styles.photoLabel}>Foto do paciente</p>
+          <button type="button" className={styles.photoChangeBtn} onClick={() => fileRef.current.click()}>
             {form.foto ? 'Trocar foto' : 'Adicionar foto'}
           </button>
           {form.foto && (
-            <button
-              type="button"
-              className="text-xs text-red-400 hover:text-red-500 font-semibold mt-1 ml-3 transition-colors"
-              onClick={() => setForm(f => ({ ...f, foto: '' }))}
-            >
+            <button type="button" className={styles.photoRemoveBtn} onClick={() => setForm(f => ({ ...f, foto: '' }))}>
               Remover
             </button>
           )}
@@ -76,7 +65,7 @@ export default function PatientForm({ initial = {}, onSave, onClose }) {
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={styles.formGrid}>
         <div className="col-span-2">
           <label className="label">Nome completo *</label>
           <input className="input mt-1.5" value={form.nome} onChange={set('nome')} placeholder="Nome do paciente" />
@@ -107,10 +96,10 @@ export default function PatientForm({ initial = {}, onSave, onClose }) {
         </div>
       </div>
 
-      <div className="my-5 border-t border-slate-100 dark:border-slate-800" />
-      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4">Histórico Médico</p>
+      <div className={styles.divider} />
+      <p className={styles.sectionLabel}>Histórico Médico</p>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={styles.formGrid}>
         <div className="col-span-2">
           <label className="label">Alergias</label>
           <input className="input mt-1.5" value={form.alergias} onChange={set('alergias')} placeholder="Anestésico, penicilina..." />

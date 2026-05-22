@@ -1,0 +1,238 @@
+.page {
+  @apply animate-fade-up;
+}
+
+.header {
+  @apply flex items-center justify-between mb-6;
+}
+
+.title {
+  @apply text-2xl font-bold text-slate-900 dark:text-white;
+}
+
+.subtitle {
+  @apply text-sm text-slate-400 mt-0.5;
+}
+
+/* Layout grid */
+.layout {
+  @apply grid grid-cols-5 gap-5;
+}
+
+/* Calendar */
+.calCard {
+  @apply col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5;
+}
+
+.calNav {
+  @apply flex items-center justify-between mb-4;
+}
+
+.calMonth {
+  @apply text-base font-bold text-slate-900 dark:text-white;
+}
+
+.calDayHeaders {
+  @apply grid grid-cols-7 mb-1;
+}
+
+.calDayHeader {
+  @apply text-center text-xs font-semibold text-slate-400 py-1;
+}
+
+.calGrid {
+  @apply grid grid-cols-7 gap-0.5;
+}
+
+.calDay {
+  @apply min-h-[72px] p-1.5 rounded-xl cursor-pointer transition-all duration-100;
+}
+
+.calDayDefault {
+  @apply hover:bg-slate-50 dark:hover:bg-slate-800;
+}
+
+.calDayToday {
+  @apply bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30;
+}
+
+.calDaySelected {
+  @apply bg-blue-600 text-white shadow-md shadow-blue-500/30;
+}
+
+.calDayNum {
+  @apply text-xs font-bold mb-1;
+}
+
+.calDayNumDefault {
+  @apply text-slate-600 dark:text-slate-400;
+}
+
+.calDayNumToday {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+.calDayNumSelected {
+  @apply text-white;
+}
+
+.calDayAppts {
+  @apply flex flex-col gap-0.5;
+}
+
+.calChip {
+  @apply text-[10px] font-semibold px-1.5 py-0.5 rounded-md truncate;
+}
+
+.calChipSelected {
+  @apply bg-white/20 text-white;
+}
+
+.calChipAgendado {
+  @apply bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300;
+}
+
+.calChipRealizado {
+  @apply bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300;
+}
+
+.calChipCancelado {
+  @apply bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 line-through;
+}
+
+.calChipFaltou {
+  @apply bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300;
+}
+
+.calMore {
+  @apply text-[10px] font-semibold px-1.5;
+}
+
+.calMoreSelected {
+  @apply text-white/70;
+}
+
+.calMoreDefault {
+  @apply text-slate-400;
+}
+
+/* Day panel */
+.dayPanel {
+  @apply col-span-2 flex flex-col gap-3;
+}
+
+.dayCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4;
+}
+
+.dayCardHeader {
+  @apply flex items-center justify-between mb-3;
+}
+
+.dayCardTitle {
+  @apply text-sm font-bold text-slate-900 dark:text-white;
+}
+
+.dayCardCount {
+  @apply text-xs text-slate-400;
+}
+
+.dayEmpty {
+  @apply text-center py-8 text-slate-400;
+}
+
+.dayEmptyIcon {
+  @apply text-3xl mb-2 opacity-50;
+}
+
+.dayEmptyText {
+  @apply text-xs;
+}
+
+.dayList {
+  @apply flex flex-col gap-2;
+}
+
+/* Appointment card */
+.apptCard {
+  @apply bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3
+         border border-slate-200 dark:border-slate-700;
+}
+
+.apptCardHeader {
+  @apply flex items-start justify-between gap-2 mb-2;
+}
+
+.apptTitle {
+  @apply text-sm font-bold text-slate-900 dark:text-slate-100;
+}
+
+.apptMeta {
+  @apply text-xs text-slate-400;
+}
+
+.apptNotes {
+  @apply text-xs text-slate-500 dark:text-slate-400 mb-2;
+}
+
+.apptActions {
+  @apply flex items-center gap-1.5 flex-wrap;
+}
+
+.apptPatientLink {
+  @apply text-xs text-blue-500 hover:text-blue-600 font-semibold;
+}
+
+.apptDivider {
+  @apply text-slate-300 dark:text-slate-600;
+}
+
+/* Status button variants */
+.statusBtnBase {
+  @apply text-xs px-2 py-0.5 rounded-lg font-semibold transition-all;
+}
+
+.statusBtnInactive {
+  @apply text-slate-400 hover:text-slate-600 dark:hover:text-slate-300;
+}
+
+.statusAgendado {
+  @apply bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 ring-1 ring-current;
+}
+
+.statusRealizado {
+  @apply bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-current;
+}
+
+.statusCancelado {
+  @apply bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 line-through ring-1 ring-current;
+}
+
+.statusFaltou {
+  @apply bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 ring-1 ring-current;
+}
+
+/* Legend */
+.legendCard {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4;
+}
+
+.legendTitle {
+  @apply text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2;
+}
+
+.legendList {
+  @apply flex flex-col gap-1.5;
+}
+
+.legendItem {
+  @apply flex items-center gap-2;
+}
+
+.legendDot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.legendLabel {
+  @apply text-xs text-slate-600 dark:text-slate-400;
+}

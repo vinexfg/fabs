@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
+import styles from './EvolusaoTab.module.css'
 
 function fmtDate(d) {
   if (!d) return '—'
@@ -39,33 +40,31 @@ export default function EvolusaoTab({ patientId, evolutions, onRefresh }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Evoluções por Consulta</p>
+      <div className={styles.header}>
+        <p className={styles.headerTitle}>Evoluções por Consulta</p>
         <button className="btn-primary btn-sm" onClick={() => setShowForm(true)}>+ Nova Evolução</button>
       </div>
 
       {evolutions.length === 0
         ? <Empty icon="📝" text="Nenhuma evolução registrada." />
-        : <div className="flex flex-col gap-3">
+        : <div className={styles.list}>
             {evolutions.map(evolution => (
-              <div key={evolution.id} className="card p-5 border-l-4 border-l-blue-500 dark:border-l-blue-400 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-3 mb-2">
+              <div key={evolution.id} className={styles.evoCard}>
+                <div className={styles.evoCardHeader}>
                   <div>
-                    <p className="text-xs text-slate-400 font-semibold mb-1">
+                    <p className={styles.evoDate}>
                       📅 {fmtDate(evolution.data)}{evolution.hora ? ` · ${evolution.hora}` : ''}
                     </p>
-                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{evolution.proc}</p>
+                    <p className={styles.evoTitle}>{evolution.proc}</p>
                   </div>
                   <button className="btn-danger btn-sm shrink-0" onClick={() => handleDelete(evolution.id)}>🗑️</button>
                 </div>
                 {evolution.notas && (
-                  <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    {evolution.notas}
-                  </p>
+                  <p className={styles.evoNotes}>{evolution.notas}</p>
                 )}
                 {evolution.proxConsulta && (
-                  <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
-                    <span className="text-xs font-semibold text-blue-500 dark:text-blue-400">
+                  <div className={styles.evoNextRow}>
+                    <span className={styles.evoNextLabel}>
                       Próxima consulta: {fmtDate(evolution.proxConsulta)}
                     </span>
                   </div>

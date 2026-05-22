@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
+import styles from './TratamentoTab.module.css'
 
 const STATUS = {
   pendente:     { label: 'Pendente',      dot: 'bg-slate-300 dark:bg-slate-600',   badge: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' },
@@ -63,12 +64,12 @@ export default function TratamentoTab({ patientId, treatments, onRefresh }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Plano de Tratamento</p>
-          {total > 0 && <p className="text-xs text-slate-400 mt-0.5">{done} de {total} concluídos · {pct}%</p>}
+      <div className={styles.header}>
+        <div className={styles.headerText}>
+          <p className={styles.headerTitle}>Plano de Tratamento</p>
+          {total > 0 && <p className={styles.headerSubtitle}>{done} de {total} concluídos · {pct}%</p>}
         </div>
-        <div className="flex gap-2">
+        <div className={styles.headerActions}>
           {templates.length > 0 && (
             <button className="btn-secondary btn-sm" onClick={() => setShowTemplates(true)}>📋 Templates</button>
           )}
@@ -77,25 +78,22 @@ export default function TratamentoTab({ patientId, treatments, onRefresh }) {
       </div>
 
       {total > 0 && (
-        <div className="mb-5">
-          <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500"
-              style={{ width: `${pct}%` }}
-            />
+        <div className={styles.progressWrapper}>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} style={{ width: `${pct}%` }} />
           </div>
         </div>
       )}
 
       {treatments.length === 0
         ? <Empty icon="🦷" text="Nenhum procedimento no plano de tratamento." />
-        : <div className="flex flex-col gap-2">
+        : <div className={styles.list}>
             {treatments.map(treatment => (
-              <div key={treatment.id} className="card px-4 py-3.5 flex items-center gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS[treatment.status]?.dot}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{treatment.proc}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+              <div key={treatment.id} className={styles.treatRow}>
+                <div className={`${styles.treatDot} ${STATUS[treatment.status]?.dot}`} />
+                <div className={styles.treatInfo}>
+                  <p className={styles.treatName}>{treatment.proc}</p>
+                  <p className={styles.treatMeta}>
                     {treatment.dente ? `Dente ${treatment.dente}` : ''}
                     {treatment.dente && treatment.valor ? ' · ' : ''}
                     {treatment.valor ? fmtR(treatment.valor) : ''}
@@ -104,11 +102,11 @@ export default function TratamentoTab({ patientId, treatments, onRefresh }) {
                   </p>
                 </div>
                 <select
-                  className={`text-xs px-2.5 py-1.5 rounded-lg border-0 cursor-pointer outline-none font-semibold ${STATUS[treatment.status]?.badge}`}
+                  className={`${styles.statusSelect} ${STATUS[treatment.status]?.badge}`}
                   value={treatment.status}
                   onChange={e => handleStatus(treatment.id, e.target.value)}
                 >
-                  {Object.entries(STATUS).map(([statusValue, statusConfig]) => <option key={statusValue} value={statusValue}>{statusConfig.label}</option>)}
+                  {Object.entries(STATUS).map(([v, s]) => <option key={v} value={v}>{s.label}</option>)}
                 </select>
                 <button className="btn-danger btn-sm" onClick={() => handleDelete(treatment.id)}>🗑️</button>
               </div>
@@ -116,16 +114,11 @@ export default function TratamentoTab({ patientId, treatments, onRefresh }) {
           </div>
       }
 
-      {/* Template picker */}
       {showTemplates && (
         <Modal title="📋 Selecionar Template" onClose={() => setShowTemplates(false)} onSave={() => setShowTemplates(false)} saveLabel="Fechar">
-          <div className="flex flex-wrap gap-2">
+          <div className={styles.templateGrid}>
             {templates.map(template => (
-              <button
-                key={template.id}
-                onClick={() => applyTemplate(template.name)}
-                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-semibold rounded-xl transition-colors"
-              >
+              <button key={template.id} className={styles.templateBtn} onClick={() => applyTemplate(template.name)}>
                 {template.name}
               </button>
             ))}

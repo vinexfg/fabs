@@ -4,25 +4,34 @@ import { AppointmentRepository, PatientRepository } from '../infrastructure/http
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 import Modal from '../components/Modal'
+import styles from './Agenda.module.css'
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DAYS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+const TYPES  = ['Consulta','Limpeza/Profilaxia','Extração','Tratamento de Canal','Implante','Restauração','Prótese','Ortodontia','Avaliação','Retorno']
 
-const TYPES = ['Consulta','Limpeza/Profilaxia','Extração','Tratamento de Canal','Implante','Restauração','Prótese','Ortodontia','Avaliação','Retorno']
+const STATUS_LABELS = { agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou' }
 
-const STATUS_STYLE = {
-  agendado:  'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300',
-  realizado: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
-  cancelado: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 line-through',
-  faltou:    'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300',
+const STATUS_CHIP = {
+  agendado:  styles.calChipAgendado,
+  realizado: styles.calChipRealizado,
+  cancelado: styles.calChipCancelado,
+  faltou:    styles.calChipFaltou,
 }
-const STATUS_DOT = {
+
+const STATUS_DOT_COLOR = {
   agendado:  'bg-blue-500',
   realizado: 'bg-emerald-500',
   cancelado: 'bg-red-400',
   faltou:    'bg-amber-400',
 }
-const STATUS_LABELS = { agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou' }
+
+const STATUS_BTN_ACTIVE = {
+  agendado:  styles.statusAgendado,
+  realizado: styles.statusRealizado,
+  cancelado: styles.statusCancelado,
+  faltou:    styles.statusFaltou,
+}
 
 function toISO(d) { return d.toISOString().split('T')[0] }
 function today() { return toISO(new Date()) }
@@ -31,7 +40,7 @@ function fmtMonthKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).pa
 function getCalendarDays(year, month) {
   const first = new Date(year, month, 1)
   const last  = new Date(year, month+1, 0)
-  const days = Array(first.getDay()).fill(null)
+  const days  = Array(first.getDay()).fill(null)
   for (let d = 1; d <= last.getDate(); d++) days.push(new Date(year, month, d))
   return days
 }
@@ -39,16 +48,16 @@ function getCalendarDays(year, month) {
 const EMPTY_FORM = { patientId: '', date: today(), time: '09:00', duration: 60, type: 'Consulta', notes: '' }
 
 export default function Agenda() {
-  const [ref, setRef]           = useState(new Date())
-  const [selected, setSelected] = useState(today())
+  const [ref, setRef]             = useState(new Date())
+  const [selected, setSelected]   = useState(today())
   const [monthAppts, setMonthAppts] = useState([])
-  const [dayAppts,   setDayAppts]   = useState([])
-  const [patients,   setPatients]   = useState([])
-  const [showForm,   setShowForm]   = useState(false)
-  const [form,       setForm]       = useState(EMPTY_FORM)
+  const [dayAppts, setDayAppts]   = useState([])
+  const [patients, setPatients]   = useState([])
+  const [showForm, setShowForm]   = useState(false)
+  const [form, setForm]           = useState(EMPTY_FORM)
   const navigate = useNavigate()
-  const toast = useToast()
-  const confirm = useConfirm()
+  const toast    = useToast()
+  const confirm  = useConfirm()
 
   const loadMonth = useCallback(async (d) => {
     try { setMonthAppts(await AppointmentRepository.findByMonth(fmtMonthKey(d))) }
@@ -66,6 +75,10 @@ export default function Agenda() {
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
+  function prevMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()-1, 1)) }
+  function nextMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()+1, 1)) }
+  function openForm(date) { setForm({ ...EMPTY_FORM, date }); setShowForm(true) }
+
   async function handleSave() {
     if (!form.patientId || !form.date || !form.time) { toast('Preencha os campos obrigatórios.', 'error'); return }
     try {
@@ -79,23 +92,16 @@ export default function Agenda() {
   }
 
   async function handleStatus(appointmentId, status) {
-    try {
-      await AppointmentRepository.updateStatus(appointmentId, status)
-      loadDay(selected)
-      loadMonth(ref)
-    } catch (error) { toast(error.message, 'error') }
+    try { await AppointmentRepository.updateStatus(appointmentId, status); loadDay(selected); loadMonth(ref) }
+    catch (error) { toast(error.message, 'error') }
   }
 
   async function handleDelete(appointmentId) {
     if (!await confirm('Remover esta consulta?')) return
-    try {
-      await AppointmentRepository.remove(appointmentId)
-      loadDay(selected)
-      loadMonth(ref)
-    } catch (error) { toast(error.message, 'error') }
+    try { await AppointmentRepository.remove(appointmentId); loadDay(selected); loadMonth(ref) }
+    catch (error) { toast(error.message, 'error') }
   }
 
-  // Group month appointments by date
   const apptByDate = monthAppts.reduce((acc, a) => {
     acc[a.date] = acc[a.date] || []
     acc[a.date].push(a)
@@ -105,73 +111,52 @@ export default function Agenda() {
   const calDays  = getCalendarDays(ref.getFullYear(), ref.getMonth())
   const todayStr = today()
 
-  function prevMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()-1, 1)) }
-  function nextMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()+1, 1)) }
-
-  function openForm(date) {
-    setForm({ ...EMPTY_FORM, date })
-    setShowForm(true)
-  }
-
   return (
-    <div className="animate-fade-up">
-      <div className="flex items-center justify-between mb-6">
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Agenda</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Gerencie as consultas do consultório</p>
+          <h1 className={styles.title}>Agenda</h1>
+          <p className={styles.subtitle}>Gerencie as consultas do consultório</p>
         </div>
         <button className="btn-primary" onClick={() => openForm(selected)}>+ Nova Consulta</button>
       </div>
 
-      <div className="grid grid-cols-5 gap-5">
-        {/* Calendar */}
-        <div className="col-span-3 card p-5">
-          {/* Month nav */}
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={prevMonth} className="btn-secondary btn-sm">‹</button>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              {MONTHS[ref.getMonth()]} {ref.getFullYear()}
-            </h2>
-            <button onClick={nextMonth} className="btn-secondary btn-sm">›</button>
+      <div className={styles.layout}>
+        <div className={styles.calCard}>
+          <div className={styles.calNav}>
+            <button className="btn-secondary btn-sm" onClick={prevMonth}>‹</button>
+            <h2 className={styles.calMonth}>{MONTHS[ref.getMonth()]} {ref.getFullYear()}</h2>
+            <button className="btn-secondary btn-sm" onClick={nextMonth}>›</button>
           </div>
 
-          {/* Day headers */}
-          <div className="grid grid-cols-7 mb-1">
-            {DAYS.map(d => (
-              <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
-            ))}
+          <div className={styles.calDayHeaders}>
+            {DAYS.map(d => <div key={d} className={styles.calDayHeader}>{d}</div>)}
           </div>
 
-          {/* Days grid */}
-          <div className="grid grid-cols-7 gap-0.5">
+          <div className={styles.calGrid}>
             {calDays.map((day, i) => {
               if (!day) return <div key={`e${i}`} />
-              const iso = toISO(day)
-              const appts = apptByDate[iso] || []
-              const isToday    = iso === todayStr
+              const iso       = toISO(day)
+              const appts     = apptByDate[iso] || []
+              const isToday   = iso === todayStr
               const isSelected = iso === selected
               return (
                 <div
                   key={iso}
                   onClick={() => setSelected(iso)}
-                  className={`min-h-[72px] p-1.5 rounded-xl cursor-pointer transition-all duration-100
-                    ${isSelected ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                    : isToday    ? 'bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30'
-                    :              'hover:bg-slate-50 dark:hover:bg-slate-800'}
-                  `}
+                  className={`${styles.calDay} ${isSelected ? styles.calDaySelected : isToday ? styles.calDayToday : styles.calDayDefault}`}
                 >
-                  <p className={`text-xs font-bold mb-1 ${isSelected ? 'text-white' : isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                  <p className={`${styles.calDayNum} ${isSelected ? styles.calDayNumSelected : isToday ? styles.calDayNumToday : styles.calDayNumDefault}`}>
                     {day.getDate()}
                   </p>
-                  <div className="flex flex-col gap-0.5">
+                  <div className={styles.calDayAppts}>
                     {appts.slice(0,2).map(a => (
-                      <div key={a.id} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md truncate
-                        ${isSelected ? 'bg-white/20 text-white' : STATUS_STYLE[a.status]}`}>
+                      <div key={a.id} className={`${styles.calChip} ${isSelected ? styles.calChipSelected : STATUS_CHIP[a.status]}`}>
                         {a.time} {a.patientNome?.split(' ')[0]}
                       </div>
                     ))}
                     {appts.length > 2 && (
-                      <div className={`text-[10px] font-semibold px-1.5 ${isSelected ? 'text-white/70' : 'text-slate-400'}`}>
+                      <div className={`${styles.calMore} ${isSelected ? styles.calMoreSelected : styles.calMoreDefault}`}>
                         +{appts.length - 2}
                       </div>
                     )}
@@ -182,25 +167,24 @@ export default function Agenda() {
           </div>
         </div>
 
-        {/* Day panel */}
-        <div className="col-span-2 flex flex-col gap-3">
-          <div className="card p-4">
-            <div className="flex items-center justify-between mb-3">
+        <div className={styles.dayPanel}>
+          <div className={styles.dayCard}>
+            <div className={styles.dayCardHeader}>
               <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                <p className={styles.dayCardTitle}>
                   {selected === todayStr ? 'Hoje' : formatSelectedDate(selected)}
                 </p>
-                <p className="text-xs text-slate-400">{dayAppts.length} consulta{dayAppts.length !== 1 ? 's' : ''}</p>
+                <p className={styles.dayCardCount}>{dayAppts.length} consulta{dayAppts.length !== 1 ? 's' : ''}</p>
               </div>
               <button className="btn-primary btn-sm" onClick={() => openForm(selected)}>+</button>
             </div>
 
             {dayAppts.length === 0
-              ? <div className="text-center py-8 text-slate-400">
-                  <div className="text-3xl mb-2 opacity-50">📅</div>
-                  <p className="text-xs">Nenhuma consulta neste dia</p>
+              ? <div className={styles.dayEmpty}>
+                  <div className={styles.dayEmptyIcon}>📅</div>
+                  <p className={styles.dayEmptyText}>Nenhuma consulta neste dia</p>
                 </div>
-              : <div className="flex flex-col gap-2">
+              : <div className={styles.dayList}>
                   {dayAppts.map(a => (
                     <DayAppointment
                       key={a.id}
@@ -214,14 +198,13 @@ export default function Agenda() {
             }
           </div>
 
-          {/* Legend */}
-          <div className="card p-4">
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Legenda</p>
-            <div className="flex flex-col gap-1.5">
+          <div className={styles.legendCard}>
+            <p className={styles.legendTitle}>Legenda</p>
+            <div className={styles.legendList}>
               {Object.entries(STATUS_LABELS).map(([k, l]) => (
-                <div key={k} className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${STATUS_DOT[k]}`} />
-                  <span className="text-xs text-slate-600 dark:text-slate-400">{l}</span>
+                <div key={k} className={styles.legendItem}>
+                  <div className={`${styles.legendDot} ${STATUS_DOT_COLOR[k]}`} />
+                  <span className={styles.legendLabel}>{l}</span>
                 </div>
               ))}
             </div>
@@ -229,7 +212,6 @@ export default function Agenda() {
         </div>
       </div>
 
-      {/* New appointment modal */}
       {showForm && (
         <Modal title="Nova Consulta" onClose={() => setShowForm(false)} onSave={handleSave}>
           <div className="grid grid-cols-2 gap-4">
@@ -273,24 +255,23 @@ export default function Agenda() {
 
 function DayAppointment({ appt, onStatus, onDelete, onPatient }) {
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-      <div className="flex items-start justify-between gap-2 mb-2">
+    <div className={styles.apptCard}>
+      <div className={styles.apptCardHeader}>
         <div>
-          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{appt.time} — {appt.patientNome}</p>
-          <p className="text-xs text-slate-400">{appt.type} · {appt.duration} min</p>
+          <p className={styles.apptTitle}>{appt.time} — {appt.patientNome}</p>
+          <p className={styles.apptMeta}>{appt.type} · {appt.duration} min</p>
         </div>
-        <button onClick={() => onDelete(appt.id)} className="btn-danger btn-sm">🗑️</button>
+        <button className="btn-danger btn-sm" onClick={() => onDelete(appt.id)}>🗑️</button>
       </div>
-      {appt.notes && <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{appt.notes}</p>}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <button onClick={() => onPatient()} className="text-xs text-blue-500 hover:text-blue-600 font-semibold">Ver ficha →</button>
-        <span className="text-slate-300 dark:text-slate-600">·</span>
+      {appt.notes && <p className={styles.apptNotes}>{appt.notes}</p>}
+      <div className={styles.apptActions}>
+        <button className={styles.apptPatientLink} onClick={() => onPatient()}>Ver ficha →</button>
+        <span className={styles.apptDivider}>·</span>
         {Object.entries(STATUS_LABELS).map(([k, l]) => (
           <button
             key={k}
             onClick={() => onStatus(appt.id, k)}
-            className={`text-xs px-2 py-0.5 rounded-lg font-semibold transition-all
-              ${appt.status === k ? STATUS_STYLE[k] + ' ring-1 ring-current' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+            className={`${styles.statusBtnBase} ${appt.status === k ? STATUS_BTN_ACTIVE[k] : styles.statusBtnInactive}`}
           >
             {l}
           </button>

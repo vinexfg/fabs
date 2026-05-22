@@ -3,6 +3,7 @@ import { SettingsRepository, TemplateRepository, BackupRepository } from '../inf
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import styles from './Settings.module.css'
 
 export default function Settings() {
   const toast = useToast()
@@ -15,7 +16,6 @@ export default function Settings() {
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
   const [savingClinic, setSavingClinic] = useState(false)
   const [savingPw, setSavingPw] = useState(false)
-
   const [templates, setTemplates] = useState([])
   const [newTpl, setNewTpl] = useState('')
   const [savingTpl, setSavingTpl] = useState(false)
@@ -67,7 +67,7 @@ export default function Settings() {
   async function deleteTemplate(templateId) {
     try {
       await TemplateRepository.remove(templateId)
-      setTemplates(current => current.filter(template => template.id !== templateId))
+      setTemplates(current => current.filter(t => t.id !== templateId))
     } catch (error) { toast(error.message, 'error') }
   }
 
@@ -101,18 +101,17 @@ export default function Settings() {
   const setP = k => e => setPw(p => ({ ...p, [k]: e.target.value }))
 
   return (
-    <div className="animate-fade-up max-w-2xl">
-      <div className="flex items-center justify-between mb-7">
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Configurações</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Dados do consultório e preferências</p>
+          <h1 className={styles.title}>Configurações</h1>
+          <p className={styles.subtitle}>Dados do consultório e preferências</p>
         </div>
       </div>
 
-      {/* Clinic info */}
-      <form onSubmit={saveClinic} className="card p-6 mb-5">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Dados do Consultório</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={saveClinic} className={styles.section}>
+        <h2 className={styles.sectionTitle}>Dados do Consultório</h2>
+        <div className={styles.formGrid}>
           <div className="col-span-2">
             <label className="label">Nome do consultório</label>
             <input className="input mt-1.5" value={clinic.clinicName} onChange={setC('clinicName')} placeholder="Ex: Clínica Sorriso" />
@@ -134,17 +133,16 @@ export default function Settings() {
             <input className="input mt-1.5" value={clinic.clinicPhone} onChange={setC('clinicPhone')} placeholder="(11) 99999-9999" />
           </div>
         </div>
-        <div className="mt-5 flex justify-end">
+        <div className={styles.formFooter}>
           <button type="submit" className="btn-primary" disabled={savingClinic}>
             {savingClinic ? 'Salvando...' : 'Salvar dados'}
           </button>
         </div>
       </form>
 
-      {/* Templates */}
-      <div className="card p-6 mb-5">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Templates de Procedimentos</h2>
-        <div className="flex gap-2 mb-4">
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Templates de Procedimentos</h2>
+        <div className={styles.templateRow}>
           <input
             className="input flex-1"
             placeholder="Nome do procedimento..."
@@ -152,25 +150,26 @@ export default function Settings() {
             onChange={e => setNewTpl(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTemplate())}
           />
-          <button className="btn-primary btn-sm" onClick={addTemplate} disabled={savingTpl || !newTpl.trim()}>+ Adicionar</button>
+          <button className="btn-primary btn-sm" onClick={addTemplate} disabled={savingTpl || !newTpl.trim()}>
+            + Adicionar
+          </button>
         </div>
         {templates.length === 0
-          ? <p className="text-sm text-slate-400 text-center py-4">Nenhum template cadastrado.</p>
-          : <div className="flex flex-wrap gap-2">
+          ? <p className={styles.templateEmpty}>Nenhum template cadastrado.</p>
+          : <div className={styles.templateList}>
               {templates.map(template => (
-                <span key={template.id} className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                <span key={template.id} className={styles.templateChip}>
                   {template.name}
-                  <button onClick={() => deleteTemplate(template.id)} className="text-slate-400 hover:text-red-500 transition-colors leading-none">×</button>
+                  <button className={styles.templateChipDelete} onClick={() => deleteTemplate(template.id)}>×</button>
                 </span>
               ))}
             </div>
         }
       </div>
 
-      {/* Change password */}
-      <form onSubmit={savePassword} className="card p-6 mb-5">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Alterar Senha</h2>
-        <div className="flex flex-col gap-4">
+      <form onSubmit={savePassword} className={styles.section}>
+        <h2 className={styles.sectionTitle}>Alterar Senha</h2>
+        <div className={styles.formGap}>
           <div>
             <label className="label">Senha atual</label>
             <input className="input mt-1.5" type="password" value={pw.current} onChange={setP('current')} placeholder="••••••••" />
@@ -184,33 +183,30 @@ export default function Settings() {
             <input className="input mt-1.5" type="password" value={pw.confirm} onChange={setP('confirm')} placeholder="••••••••" />
           </div>
         </div>
-        <div className="mt-5 flex justify-end">
+        <div className={styles.formFooter}>
           <button type="submit" className="btn-primary" disabled={savingPw || !pw.current || !pw.next}>
             {savingPw ? 'Salvando...' : 'Alterar senha'}
           </button>
         </div>
       </form>
 
-      {/* Backup */}
-      <div className="card p-6 mb-5">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Backup dos Dados</h2>
-        <div className="flex gap-3 flex-wrap">
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Backup dos Dados</h2>
+        <div className={styles.backupActions}>
           <button className="btn-secondary" onClick={handleBackupExport}>⬇️ Exportar backup</button>
           <label className="btn-secondary cursor-pointer">
             ⬆️ Restaurar backup
             <input type="file" accept=".json" className="hidden" onChange={handleBackupRestore} />
           </label>
         </div>
-        <p className="text-xs text-slate-400 mt-3">O backup exporta todos os dados do sistema em formato JSON. A restauração substitui todos os dados atuais.</p>
+        <p className={styles.backupNote}>
+          O backup exporta todos os dados do sistema em formato JSON. A restauração substitui todos os dados atuais.
+        </p>
       </div>
 
-      {/* Logout */}
-      <div className="card p-6">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Sessão</h2>
-        <button
-          className="btn-danger"
-          onClick={() => { logout(); navigate('/login', { replace: true }) }}
-        >
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Sessão</h2>
+        <button className="btn-danger" onClick={() => { logout(); navigate('/login', { replace: true }) }}>
           Sair do sistema
         </button>
       </div>
