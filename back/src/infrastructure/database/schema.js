@@ -103,7 +103,7 @@ const seedDefaultSettings = () => {
   const defaultSettings = [
     ['password',      hashPw('1234')],
     ['clinicName',    'Meu Consultório Odontológico'],
-    ['doctorName',    'Dr(a). Nome do Dentista'],
+    ['doctorName',    'Dr. Fabricio Almeida'],
     ['cro',           'CRO-XX 00000'],
     ['clinicAddress', ''],
     ['clinicPhone',   ''],

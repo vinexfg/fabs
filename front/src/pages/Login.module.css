@@ -1,9 +1,28 @@
 .page {
-  @apply min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4;
+  @apply min-h-screen flex items-center justify-center p-4 relative overflow-hidden;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 40%, #f5f3ff 100%);
+}
+
+.page::before {
+  content: '';
+  @apply absolute inset-0 pointer-events-none;
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 20%, rgba(59,130,246,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 85% 80%, rgba(139,92,246,0.10) 0%, transparent 60%);
+}
+
+:global(.dark) .page {
+  background: linear-gradient(135deg, #0b0f1a 0%, #0f172a 50%, #0d0b1a 100%);
+}
+
+:global(.dark) .page::before {
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 20%, rgba(59,130,246,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 85% 80%, rgba(139,92,246,0.12) 0%, transparent 60%);
 }
 
 .container {
-  @apply w-full max-w-sm;
+  @apply w-full max-w-sm relative z-10 animate-fade-up;
 }
 
 .logoSection {
@@ -11,24 +30,32 @@
 }
 
 .logoIcon {
-  @apply w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700
-         flex items-center justify-center text-3xl shadow-lg shadow-blue-500/30 mx-auto mb-4;
+  @apply w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center text-4xl
+         shadow-2xl shadow-blue-500/30;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
 }
 
 .title {
-  @apply text-2xl font-bold text-slate-900 dark:text-white;
+  @apply text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight;
 }
 
 .subtitle {
-  @apply text-sm text-slate-400 mt-1;
+  @apply text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-medium;
 }
 
 .formCard {
-  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6;
+  @apply rounded-2xl p-7 shadow-xl shadow-slate-200/80 dark:shadow-black/40
+         border border-white/80 dark:border-slate-700/60;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+}
+
+:global(.dark) .formCard {
+  background: rgba(15,23,42,0.85);
 }
 
 .form {
-  @apply flex flex-col gap-4;
+  @apply flex flex-col gap-5;
 }
 
 .errorBox {
@@ -40,5 +67,5 @@
 }
 
 .hint {
-  @apply text-center text-xs text-slate-400 mt-4;
+  @apply text-center text-xs text-slate-400 mt-5;
 }

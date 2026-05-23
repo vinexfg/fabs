@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './context/ToastContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ConfirmProvider } from './context/ConfirmContext'
+import { GlobalSearchProvider } from './context/GlobalSearchContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -25,6 +26,7 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <ConfirmProvider>
+            <GlobalSearchProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route
@@ -46,6 +48,7 @@ export default function App() {
                 }
               />
             </Routes>
+            </GlobalSearchProvider>
           </ConfirmProvider>
         </ToastProvider>
       </AuthProvider>

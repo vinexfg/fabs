@@ -2,6 +2,8 @@ import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
+import { useGlobalSearch } from '../context/GlobalSearchContext'
+import GlobalSearch from './GlobalSearch'
 import styles from './Layout.module.css'
 
 const links = [
@@ -14,6 +16,7 @@ const links = [
 export default function Layout({ children }) {
   const { dark, toggle } = useTheme()
   const { logout } = useAuth()
+  const { setOpen: openSearch } = useGlobalSearch()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -23,6 +26,7 @@ export default function Layout({ children }) {
 
   return (
     <div className={styles.root}>
+      <GlobalSearch />
       <aside className={styles.sidebar}>
         <div className={styles.logoSection}>
           <div className={styles.logoRow}>
@@ -33,6 +37,12 @@ export default function Layout({ children }) {
             </div>
           </div>
         </div>
+
+        <button className={styles.searchBtn} onClick={() => openSearch(true)}>
+          <span>🔍</span>
+          <span className={styles.searchBtnText}>Buscar...</span>
+          <kbd className={styles.searchKbd}>Ctrl K</kbd>
+        </button>
 
         <nav className={styles.nav}>
           <p className={styles.navSectionLabel}>Menu</p>

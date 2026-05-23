@@ -13,13 +13,18 @@ export default {
           to:   { transform: 'translateX(0)',    opacity: '1' },
         },
         'fade-up': {
-          from: { transform: 'translateY(8px)', opacity: '0' },
-          to:   { transform: 'translateY(0)',   opacity: '1' },
+          from: { transform: 'translateY(10px)', opacity: '0' },
+          to:   { transform: 'translateY(0)',    opacity: '1' },
+        },
+        'scale-in': {
+          from: { transform: 'scale(0.95)', opacity: '0' },
+          to:   { transform: 'scale(1)',    opacity: '1' },
         },
       },
       animation: {
         'slide-in': 'slide-in 0.25s cubic-bezier(0.16,1,0.3,1)',
-        'fade-up':  'fade-up  0.2s ease',
+        'fade-up':  'fade-up  0.25s cubic-bezier(0.16,1,0.3,1)',
+        'scale-in': 'scale-in 0.2s cubic-bezier(0.16,1,0.3,1)',
       },
     },
   },

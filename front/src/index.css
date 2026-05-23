@@ -6,8 +6,12 @@
   html { @apply antialiased; }
 
   body {
-    @apply bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100;
+    @apply bg-slate-100 dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(59,130,246,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(99,102,241,0.05) 0%, transparent 60%);
+    background-attachment: fixed;
   }
 
   input, select, textarea {
@@ -21,20 +25,21 @@
 
 @layer components {
   .card {
-    @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm;
+    @apply bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm;
   }
 
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5
-           bg-blue-600 hover:bg-blue-500 active:scale-95
+           bg-blue-600 hover:bg-blue-500 active:scale-[0.97]
            dark:bg-blue-500 dark:hover:bg-blue-400
            text-white text-sm font-semibold rounded-xl
-           transition-all duration-150 cursor-pointer border-0 shadow-sm shadow-blue-600/20;
+           transition-all duration-150 cursor-pointer border-0
+           shadow-md shadow-blue-600/25 hover:shadow-blue-500/30;
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5
-           bg-white hover:bg-slate-50 active:scale-95
+           bg-white hover:bg-slate-50 active:scale-[0.97]
            dark:bg-slate-800 dark:hover:bg-slate-700
            text-slate-700 dark:text-slate-200
            text-sm font-semibold rounded-xl
@@ -44,7 +49,7 @@
 
   .btn-danger {
     @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5
-           bg-red-50 hover:bg-red-100 active:scale-95
+           bg-red-50 hover:bg-red-100 active:scale-[0.97]
            dark:bg-red-900/20 dark:hover:bg-red-900/40
            text-red-600 dark:text-red-400
            text-xs font-semibold rounded-xl
@@ -57,14 +62,13 @@
 
   .input {
     @apply w-full px-3.5 py-2.5
-           bg-slate-50 dark:bg-slate-800/60
+           bg-white dark:bg-slate-800/80
            text-slate-900 dark:text-slate-100
            border border-slate-200 dark:border-slate-700
            rounded-xl text-sm outline-none
            placeholder:text-slate-400 dark:placeholder:text-slate-500
            focus:border-blue-500 dark:focus:border-blue-400
-           focus:ring-2 focus:ring-blue-500/10 dark:focus:ring-blue-400/10
-           focus:bg-white dark:focus:bg-slate-800
+           focus:ring-2 focus:ring-blue-500/15 dark:focus:ring-blue-400/15
            transition-all duration-150;
   }
 

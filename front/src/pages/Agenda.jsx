@@ -55,6 +55,8 @@ export default function Agenda() {
   const [patients, setPatients]   = useState([])
   const [showForm, setShowForm]   = useState(false)
   const [form, setForm]           = useState(EMPTY_FORM)
+  const [filterStatus, setFilterStatus] = useState('')
+  const [filterType, setFilterType]     = useState('')
   const navigate = useNavigate()
   const toast    = useToast()
   const confirm  = useConfirm()
@@ -101,6 +103,12 @@ export default function Agenda() {
     try { await AppointmentRepository.remove(appointmentId); loadDay(selected); loadMonth(ref) }
     catch (error) { toast(error.message, 'error') }
   }
+
+  const visibleAppts = dayAppts.filter(a => {
+    if (filterStatus && a.status !== filterStatus) return false
+    if (filterType   && a.type   !== filterType)   return false
+    return true
+  })
 
   const apptByDate = monthAppts.reduce((acc, a) => {
     acc[a.date] = acc[a.date] || []
@@ -179,13 +187,40 @@ export default function Agenda() {
               <button className="btn-primary btn-sm" onClick={() => openForm(selected)}>+</button>
             </div>
 
-            {dayAppts.length === 0
+            <div className={styles.filterRow}>
+              <select
+                className={styles.filterSelect}
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+              >
+                <option value="">Todos os status</option>
+                {Object.entries(STATUS_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select>
+              <select
+                className={styles.filterSelect}
+                value={filterType}
+                onChange={e => setFilterType(e.target.value)}
+              >
+                <option value="">Todos os tipos</option>
+                {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              {(filterStatus || filterType) && (
+                <button
+                  className={styles.filterClear}
+                  onClick={() => { setFilterStatus(''); setFilterType('') }}
+                >✕</button>
+              )}
+            </div>
+
+            {visibleAppts.length === 0
               ? <div className={styles.dayEmpty}>
                   <div className={styles.dayEmptyIcon}>📅</div>
-                  <p className={styles.dayEmptyText}>Nenhuma consulta neste dia</p>
+                  <p className={styles.dayEmptyText}>
+                    {dayAppts.length === 0 ? 'Nenhuma consulta neste dia' : 'Nenhuma consulta com esses filtros'}
+                  </p>
                 </div>
               : <div className={styles.dayList}>
-                  {dayAppts.map(a => (
+                  {visibleAppts.map(a => (
                     <DayAppointment
                       key={a.id}
                       appt={a}

@@ -15,11 +15,14 @@ function calculateAge(dateOfBirth) {
   return age
 }
 
+const PAGE_SIZE = 15
+
 export default function Pacientes() {
   const [patients, setPatients] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [convenioFilter, setConvenioFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [page, setPage] = useState(1)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -57,6 +60,13 @@ export default function Pacientes() {
     })
     .sort((a, b) => a.nome.localeCompare(b.nome))
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  function onFilterChange(setter) {
+    return v => { setter(v); setPage(1) }
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -77,7 +87,7 @@ export default function Pacientes() {
           className="input pl-10"
           placeholder="Buscar por nome, telefone, CPF ou convênio..."
           value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
+          onChange={e => onFilterChange(setSearchQuery)(e.target.value)}
         />
       </div>
 
@@ -86,7 +96,7 @@ export default function Pacientes() {
           {convenios.map(c => (
             <button
               key={c}
-              onClick={() => setConvenioFilter(c === 'Todos' ? '' : c)}
+              onClick={() => onFilterChange(setConvenioFilter)(c === 'Todos' ? '' : c)}
               className={(convenioFilter === c) || (c === 'Todos' && !convenioFilter) ? styles.chipActive : styles.chip}
             >
               {c}
@@ -98,11 +108,29 @@ export default function Pacientes() {
       <div className={styles.list}>
         {filtered.length === 0
           ? <Empty icon="🔍" text={searchQuery || convenioFilter ? 'Nenhum resultado encontrado.' : 'Nenhum paciente cadastrado.'} />
-          : filtered.map(patient => (
+          : paginated.map(patient => (
               <PatientCard key={patient.id} patient={patient} onClick={() => navigate(`/pacientes/${patient.id}`)} />
             ))
         }
       </div>
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageBtn}
+            onClick={() => setPage(p => Math.max(p - 1, 1))}
+            disabled={page === 1}
+          >‹ Anterior</button>
+          <span className={styles.pageInfo}>
+            {page} de {totalPages} · {filtered.length} pacientes
+          </span>
+          <button
+            className={styles.pageBtn}
+            onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+            disabled={page === totalPages}
+          >Próximo ›</button>
+        </div>
+      )}
 
       {showForm && <PatientForm onSave={handleCreate} onClose={() => setShowForm(false)} />}
     </div>
