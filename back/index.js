@@ -30,5 +30,12 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: err.message || 'Erro interno do servidor' });
 });
 
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  const distPath = path.join(__dirname, '..', 'front', 'dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
+}
+
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server rodando em http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server rodando na porta ${PORT}`));
