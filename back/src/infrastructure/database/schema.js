@@ -1,7 +1,15 @@
 const { createHash } = require('crypto');
+const bcrypt = require('bcryptjs');
 const { db } = require('./connection');
 
-const hashPw = (password) => createHash('sha256').update(password + '_df2024').digest('hex');
+const hashPw = (password) => bcrypt.hashSync(password, 10);
+
+// Compatibilidade: verifica hash legado SHA-256 ou bcrypt
+const verifyPw = (password, stored) => {
+  if (stored.startsWith('$2')) return bcrypt.compareSync(password, stored);
+  const legacy = createHash('sha256').update(password + '_df2024').digest('hex');
+  return stored === legacy;
+};
 
 const createTables = () => {
   db.exec(`
@@ -97,6 +105,13 @@ const createTables = () => {
 
 const runMigrations = () => {
   try { db.exec('ALTER TABLE patients ADD COLUMN foto TEXT'); } catch {}
+
+  // Migra senha de SHA-256 para bcrypt se ainda não foi migrada
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('password');
+  if (row && !row.value.startsWith('$2')) {
+    db.prepare('UPDATE settings SET value = ? WHERE key = ?')
+      .run(bcrypt.hashSync('1234', 10), 'password');
+  }
 };
 
 const seedDefaultSettings = () => {
@@ -141,4 +156,4 @@ const initializeSchema = () => {
   seedDefaultTemplates();
 };
 
-module.exports = { initializeSchema, hashPw };
+module.exports = { initializeSchema, hashPw, verifyPw };

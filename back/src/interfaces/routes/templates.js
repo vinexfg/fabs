@@ -1,8 +1,9 @@
 const router = require('express').Router();
-const templateController = require('../controllers/TemplateController');
+const c = require('../controllers/TemplateController');
+const { wrap } = require('../middleware/wrap');
 
-router.get('/',     (req, res) => templateController.list(req, res));
-router.post('/',    (req, res) => templateController.create(req, res));
-router.delete('/:id', (req, res) => templateController.remove(req, res));
+router.get('/',       wrap((req, res) => c.list(req, res)));
+router.post('/',      wrap((req, res) => c.create(req, res)));
+router.delete('/:id', wrap((req, res) => c.remove(req, res)));
 
 module.exports = router;

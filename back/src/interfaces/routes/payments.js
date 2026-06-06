@@ -1,10 +1,11 @@
 const router = require('express').Router();
-const paymentController = require('../controllers/PaymentController');
+const c = require('../controllers/PaymentController');
+const { wrap } = require('../middleware/wrap');
 
-router.get('/',                      (req, res) => paymentController.list(req, res));
-router.get('/inadimplencia',         (req, res) => paymentController.listInadimplencia(req, res));
-router.get('/patient/:patientId',    (req, res) => paymentController.listByPatient(req, res));
-router.post('/',                     (req, res) => paymentController.create(req, res));
-router.delete('/:id',                (req, res) => paymentController.remove(req, res));
+router.get('/',                   wrap((req, res) => c.list(req, res)));
+router.get('/inadimplencia',      wrap((req, res) => c.listInadimplencia(req, res)));
+router.get('/patient/:patientId', wrap((req, res) => c.listByPatient(req, res)));
+router.post('/',                  wrap((req, res) => c.create(req, res)));
+router.delete('/:id',             wrap((req, res) => c.remove(req, res)));
 
 module.exports = router;

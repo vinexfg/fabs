@@ -1,12 +1,13 @@
 const router = require('express').Router();
-const appointmentController = require('../controllers/AppointmentController');
+const c = require('../controllers/AppointmentController');
+const { wrap } = require('../middleware/wrap');
 
-router.get('/',                      (req, res) => appointmentController.list(req, res));
-router.get('/tomorrow',              (req, res) => appointmentController.listTomorrow(req, res));
-router.get('/patient/:patientId',    (req, res) => appointmentController.listByPatient(req, res));
-router.post('/',                     (req, res) => appointmentController.create(req, res));
-router.put('/:id',                   (req, res) => appointmentController.update(req, res));
-router.patch('/:id/status',          (req, res) => appointmentController.updateStatus(req, res));
-router.delete('/:id',                (req, res) => appointmentController.remove(req, res));
+router.get('/',                   wrap((req, res) => c.list(req, res)));
+router.get('/tomorrow',           wrap((req, res) => c.listTomorrow(req, res)));
+router.get('/patient/:patientId', wrap((req, res) => c.listByPatient(req, res)));
+router.post('/',                  wrap((req, res) => c.create(req, res)));
+router.put('/:id',                wrap((req, res) => c.update(req, res)));
+router.patch('/:id/status',       wrap((req, res) => c.updateStatus(req, res)));
+router.delete('/:id',             wrap((req, res) => c.remove(req, res)));
 
 module.exports = router;

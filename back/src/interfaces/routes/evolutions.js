@@ -1,8 +1,9 @@
 const router = require('express').Router();
-const evolutionController = require('../controllers/EvolutionController');
+const c = require('../controllers/EvolutionController');
+const { wrap } = require('../middleware/wrap');
 
-router.get('/patient/:patientId', (req, res) => evolutionController.listByPatient(req, res));
-router.post('/',                  (req, res) => evolutionController.create(req, res));
-router.delete('/:id',             (req, res) => evolutionController.remove(req, res));
+router.get('/patient/:patientId', wrap((req, res) => c.listByPatient(req, res)));
+router.post('/',                  wrap((req, res) => c.create(req, res)));
+router.delete('/:id',             wrap((req, res) => c.remove(req, res)));
 
 module.exports = router;

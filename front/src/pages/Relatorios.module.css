@@ -30,6 +30,23 @@
          bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm;
 }
 
+/* Filtro de período */
+.filterBar {
+  @apply flex items-center gap-3 mb-5 flex-wrap;
+}
+
+.filterLabel {
+  @apply text-sm font-semibold text-slate-500 dark:text-slate-400;
+}
+
+.filterSep {
+  @apply text-sm text-slate-400;
+}
+
+.filterCount {
+  @apply text-xs font-semibold text-blue-500 dark:text-blue-400 ml-1;
+}
+
 /* Summary stats */
 .statsGrid {
   @apply grid grid-cols-3 gap-4 mb-7;

@@ -1,7 +1,8 @@
 const router = require('express').Router();
-const odontogramaController = require('../controllers/OdontogramaController');
+const c = require('../controllers/OdontogramaController');
+const { wrap } = require('../middleware/wrap');
 
-router.get('/:patientId', (req, res) => odontogramaController.listByPatient(req, res));
-router.put('/:patientId', (req, res) => odontogramaController.upsert(req, res));
+router.get('/:patientId', wrap((req, res) => c.listByPatient(req, res)));
+router.put('/:patientId', wrap((req, res) => c.upsert(req, res)));
 
 module.exports = router;

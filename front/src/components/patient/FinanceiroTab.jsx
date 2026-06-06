@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
+import { useReactToPrint } from 'react-to-print'
 import { PaymentRepository } from '../../infrastructure/http'
 import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
 import { exportPaymentsCSV } from '../../utils/exportCsv'
+import ReciboPrint from './print/ReciboPrint'
 import styles from './FinanceiroTab.module.css'
 
 const FORMAS = {
@@ -23,11 +25,15 @@ function fmtDate(d) {
 }
 function today() { return new Date().toISOString().split('T')[0] }
 
-export default function FinanceiroTab({ patientId, patient, treatments, payments, onRefresh }) {
+export default function FinanceiroTab({ patientId, patient, clinic, treatments, payments, onRefresh }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ descricao: '', valor: '', data: today(), forma: 'pix' })
+  const [printPayment, setPrintPayment] = useState(null)
+  const reciboRef = useRef()
   const toast = useToast()
   const confirm = useConfirm()
+
+  const printRecibo = useReactToPrint({ contentRef: reciboRef })
 
   const totalTrat = treatments.reduce((s, t) => s + (parseFloat(t.valor) || 0), 0)
   const totalPago = payments.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
@@ -50,6 +56,11 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
     if (!await confirm('Remover este pagamento?')) return
     try { await PaymentRepository.remove(paymentId); onRefresh() }
     catch (error) { toast(error.message, 'error') }
+  }
+
+  function handlePrintRecibo(payment) {
+    setPrintPayment(payment)
+    setTimeout(() => printRecibo(), 50)
   }
 
   return (
@@ -90,11 +101,16 @@ export default function FinanceiroTab({ patientId, patient, treatments, payments
                 </div>
                 <div className={styles.tableRowRight}>
                   <span className={styles.tableRowValue}>{fmtR(parseFloat(payment.valor))}</span>
+                  <button className="btn-secondary btn-sm" title="Imprimir recibo" onClick={() => handlePrintRecibo(payment)}>🖨️</button>
                   <button className="btn-danger btn-sm" onClick={() => handleDelete(payment.id)}>🗑️</button>
                 </div>
               </div>
             ))
         }
+      </div>
+
+      <div style={{ display: 'none' }}>
+        <ReciboPrint ref={reciboRef} patient={patient} clinic={clinic} payment={printPayment} />
       </div>
 
       {showForm && (

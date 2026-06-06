@@ -7,7 +7,7 @@ const { authenticate } = require('./src/interfaces/middleware/AuthMiddleware');
 initializeSchema();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 
 app.use('/api/auth', require('./src/interfaces/routes/auth'));
@@ -22,6 +22,12 @@ app.use('/api/odontograma',  require('./src/interfaces/routes/odontograma'));
 app.use('/api/settings',     require('./src/interfaces/routes/settings'));
 app.use('/api/templates',    require('./src/interfaces/routes/templates'));
 app.use('/api/backup',       require('./src/interfaces/routes/backup'));
+
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: err.message || 'Erro interno do servidor' });
+});
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server rodando em http://localhost:${PORT}`));

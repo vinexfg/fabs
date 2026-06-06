@@ -175,7 +175,7 @@ export default function PatientDetail() {
       {activeTab === 'ficha'       && <FichaTab patient={patient} />}
       {activeTab === 'odontograma' && <OdontogramaTab patientId={id} />}
       {activeTab === 'tratamento'  && <TratamentoTab patientId={id} treatments={treatments} onRefresh={loadAll} />}
-      {activeTab === 'financeiro'  && <FinanceiroTab patientId={id} patient={patient} treatments={treatments} payments={payments} onRefresh={loadAll} />}
+      {activeTab === 'financeiro'  && <FinanceiroTab patientId={id} patient={patient} clinic={clinic} treatments={treatments} payments={payments} onRefresh={loadAll} />}
       {activeTab === 'evolucoes'   && <EvolusaoTab patientId={id} evolutions={evolutions} onRefresh={loadAll} />}
 
       {editing && <PatientForm initial={patient} onSave={handleEdit} onClose={() => setEditing(false)} />}

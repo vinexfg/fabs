@@ -24,6 +24,8 @@ export default function Relatorios() {
   const [inadimplentes, setInadimplentes] = useState([])
   const [clinic, setClinic]             = useState({})
   const [loading, setLoading]           = useState(true)
+  const [filterFrom, setFilterFrom]     = useState('')
+  const [filterTo, setFilterTo]         = useState('')
   const toast = useToast()
 
   useEffect(() => { load() }, [])
@@ -63,12 +65,19 @@ export default function Relatorios() {
     </div>
   )
 
-  const total    = payments.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const filtered = payments.filter(p => {
+    const d = p.data || ''
+    if (filterFrom && d < filterFrom) return false
+    if (filterTo   && d > filterTo)   return false
+    return true
+  })
+
+  const total    = filtered.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
   const thisMonth = new Date().toISOString().slice(0, 7)
-  const totalMes = payments.filter(p => (p.data || '').startsWith(thisMonth)).reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const totalMes = filtered.filter(p => (p.data || '').startsWith(thisMonth)).reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
 
   const byMonth = {}
-  payments.forEach(p => {
+  filtered.forEach(p => {
     const m = (p.data || '').slice(0, 7)
     if (!m) return
     byMonth[m] = (byMonth[m] || 0) + (parseFloat(p.valor) || 0)
@@ -77,13 +86,13 @@ export default function Relatorios() {
   const maxVal = Math.max(...months.map(([, v]) => v), 1)
 
   const byForma = {}
-  payments.forEach(p => {
+  filtered.forEach(p => {
     const f = p.forma || 'outro'
     byForma[f] = (byForma[f] || 0) + (parseFloat(p.valor) || 0)
   })
   const formaEntries = Object.entries(byForma).sort(([, a], [, b]) => b - a)
 
-  const recent = [...payments].sort((a, b) => (b.data || '').localeCompare(a.data || '')).slice(0, 20)
+  const recent = [...filtered].sort((a, b) => (b.data || '').localeCompare(a.data || '')).slice(0, 20)
   const totalInadimplencia = inadimplentes.reduce((s, r) => s + r.emAberto, 0)
 
   return (
@@ -112,6 +121,36 @@ export default function Relatorios() {
 
       {tab === 'receitas' && (
         <>
+          <div className={styles.filterBar}>
+            <span className={styles.filterLabel}>Período:</span>
+            <input
+              type="date"
+              className="input"
+              value={filterFrom}
+              onChange={e => setFilterFrom(e.target.value)}
+            />
+            <span className={styles.filterSep}>até</span>
+            <input
+              type="date"
+              className="input"
+              value={filterTo}
+              onChange={e => setFilterTo(e.target.value)}
+            />
+            {(filterFrom || filterTo) && (
+              <button
+                className="btn-secondary btn-sm"
+                onClick={() => { setFilterFrom(''); setFilterTo('') }}
+              >
+                Limpar
+              </button>
+            )}
+            {(filterFrom || filterTo) && (
+              <span className={styles.filterCount}>
+                {filtered.length} pagamento{filtered.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
               <div className={`${styles.statIcon} bg-blue-50 dark:bg-blue-500/10`}>💰</div>

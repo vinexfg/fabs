@@ -1,7 +1,8 @@
 const router = require('express').Router();
-const backupController = require('../controllers/BackupController');
+const c = require('../controllers/BackupController');
+const { wrap } = require('../middleware/wrap');
 
-router.get('/',          (req, res) => backupController.exportBackup(req, res));
-router.post('/restore',  (req, res) => backupController.restore(req, res));
+router.get('/',          wrap((req, res) => c.exportBackup(req, res)));
+router.post('/restore',  wrap((req, res) => c.restore(req, res)));
 
 module.exports = router;

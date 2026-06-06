@@ -1,8 +1,9 @@
 const router = require('express').Router();
-const settingsController = require('../controllers/SettingsController');
+const c = require('../controllers/SettingsController');
+const { wrap } = require('../middleware/wrap');
 
-router.get('/',          (req, res) => settingsController.show(req, res));
-router.put('/',          (req, res) => settingsController.update(req, res));
-router.put('/password',  (req, res) => settingsController.updatePassword(req, res));
+router.get('/',          wrap((req, res) => c.show(req, res)));
+router.put('/',          wrap((req, res) => c.update(req, res)));
+router.put('/password',  wrap((req, res) => c.updatePassword(req, res)));
 
 module.exports = router;
