@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { PaymentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { exportRelatorioCSV } from '../utils/exportCsv'
+import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
 import styles from './Relatorios.module.css'
 
 const FORMAS = {
@@ -292,8 +293,8 @@ function InadimplenciaView({ rows, total, buildWaLink }) {
           <button
             className={styles.inadCobrAll}
             onClick={() => {
-              const links = rows.filter(r => buildWaLink(r))
-              links.forEach(r => window.open(buildWaLink(r), '_blank'))
+              const withLink = rows.filter(r => buildWaLink(r))
+              if (withLink.length > 0) openWhatsAppSequential(withLink.map(r => buildWaLink(r)))
             }}
           >
             💬 Cobrar todos por WhatsApp

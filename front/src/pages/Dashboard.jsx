@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { PatientRepository, AppointmentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import PatientForm from '../components/patient/PatientForm'
+import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
 import styles from './Dashboard.module.css'
 
 const STATUS_BADGE = {
@@ -140,11 +141,11 @@ export default function Dashboard() {
             <button
               className={styles.reminderAllBtn}
               onClick={() => {
-                const links = tomorrowAppts.filter(a => buildWaLink(a))
-                if (links.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
-                links.forEach(a => window.open(buildWaLink(a), '_blank'))
+                const withLink = tomorrowAppts.filter(a => buildWaLink(a))
+                if (withLink.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
+                openWhatsAppSequential(withLink.map(a => buildWaLink(a)), () => {})
                 setSentReminders(new Set(tomorrowAppts.map(a => a.id)))
-                toast(`${links.length} lembrete${links.length !== 1 ? 's' : ''} aberto${links.length !== 1 ? 's' : ''}!`, 'success')
+                toast(`${withLink.length} lembrete${withLink.length !== 1 ? 's' : ''} sendo aberto${withLink.length !== 1 ? 's' : ''}...`, 'success')
               }}
             >
               Enviar todos →

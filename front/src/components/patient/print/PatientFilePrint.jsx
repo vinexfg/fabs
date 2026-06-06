@@ -35,6 +35,10 @@ function calculateAge(dateOfBirth) {
   return age
 }
 
+function parseAnamnese(raw) {
+  try { return raw ? JSON.parse(raw) : null } catch { return null }
+}
+
 const PatientFilePrint = React.forwardRef(function PatientFilePrint({ patient, treatments, payments, evolutions }, ref) {
   if (!patient) return null
 
@@ -42,7 +46,18 @@ const PatientFilePrint = React.forwardRef(function PatientFilePrint({ patient, t
   const totalPaid = payments.reduce((sum, payment) => sum + (parseFloat(payment.valor) || 0), 0)
   const amountOwed = Math.max(0, totalTreatments - totalPaid)
 
-  const hasMedicalHistory = patient.alergias || patient.medicamentos || patient.conds || patient.queixa
+  const anamnese      = parseAnamnese(patient.anamnese)
+  const hasAnamnese   = anamnese !== null
+  const alergiasCheck = anamnese?.alergiasCheck || []
+  const alergiasExtra = anamnese?.alergiasExtra || ''
+  const condsCheck    = anamnese?.condsCheck    || []
+  const condsExtra    = anamnese?.condsExtra    || ''
+  const medicamentos  = anamnese?.medicamentos  || patient.medicamentos || ''
+  const queixa        = anamnese?.queixa        || patient.queixa       || ''
+  const allAlergias   = [...alergiasCheck, ...(alergiasExtra ? [alergiasExtra] : [])].filter(Boolean)
+  const allConds      = [...condsCheck,    ...(condsExtra    ? [condsExtra]    : [])].filter(Boolean)
+
+  const hasMedicalHistory = allAlergias.length || allConds.length || medicamentos || queixa || patient.alergias || patient.conds
 
   return (
     <div ref={ref} className="print-wrapper" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
@@ -93,30 +108,41 @@ const PatientFilePrint = React.forwardRef(function PatientFilePrint({ patient, t
 
       {hasMedicalHistory && (
         <>
-          <div className="print-section-title">Histórico Médico</div>
-          {patient.alergias && (
-            <div className="print-row">
-              <span className="print-label">Alergias</span>
-              <span>{patient.alergias}</span>
-            </div>
-          )}
-          {patient.medicamentos && (
-            <div className="print-row">
-              <span className="print-label">Medicamentos</span>
-              <span>{patient.medicamentos}</span>
-            </div>
-          )}
-          {patient.conds && (
-            <div className="print-row">
-              <span className="print-label">Condições</span>
-              <span>{patient.conds}</span>
-            </div>
-          )}
-          {patient.queixa && (
-            <div className="print-row">
-              <span className="print-label">Queixa principal</span>
-              <span>{patient.queixa}</span>
-            </div>
+          <div className="print-section-title">Anamnese</div>
+          {hasAnamnese ? (
+            <>
+              {allAlergias.length > 0 && (
+                <div className="print-row">
+                  <span className="print-label">Alergias</span>
+                  <span>{allAlergias.join(' · ')}</span>
+                </div>
+              )}
+              {allConds.length > 0 && (
+                <div className="print-row">
+                  <span className="print-label">Condições médicas</span>
+                  <span>{allConds.join(' · ')}</span>
+                </div>
+              )}
+              {medicamentos && (
+                <div className="print-row">
+                  <span className="print-label">Medicamentos</span>
+                  <span>{medicamentos}</span>
+                </div>
+              )}
+              {queixa && (
+                <div className="print-row">
+                  <span className="print-label">Queixa principal</span>
+                  <span>{queixa}</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {patient.alergias     && <div className="print-row"><span className="print-label">Alergias</span><span>{patient.alergias}</span></div>}
+              {patient.medicamentos && <div className="print-row"><span className="print-label">Medicamentos</span><span>{patient.medicamentos}</span></div>}
+              {patient.conds        && <div className="print-row"><span className="print-label">Condições</span><span>{patient.conds}</span></div>}
+              {patient.queixa       && <div className="print-row"><span className="print-label">Queixa principal</span><span>{patient.queixa}</span></div>}
+            </>
           )}
         </>
       )}
