@@ -28,6 +28,8 @@ const remove = (id) => {
   db.prepare('DELETE FROM evolutions WHERE patientId = ?').run(id);
   db.prepare('DELETE FROM payments WHERE patientId = ?').run(id);
   db.prepare('DELETE FROM treatments WHERE patientId = ?').run(id);
+  db.prepare('DELETE FROM appointments WHERE patientId = ?').run(id);
+  db.prepare('DELETE FROM odontograma WHERE patientId = ?').run(id);
   db.prepare('DELETE FROM budgets WHERE patientId = ?').run(id);
   db.prepare('DELETE FROM patients WHERE id = ?').run(id);
 };
