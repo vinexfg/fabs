@@ -40,7 +40,13 @@ const create = ({ patientId, descricao, valor, data, forma }) => {
   return findById(id);
 };
 
+const update = (id, { descricao, valor, data, forma }) => {
+  db.prepare('UPDATE payments SET descricao=?, valor=?, data=?, forma=? WHERE id=?')
+    .run(descricao, valor, data, forma, id);
+  return findById(id);
+};
+
 const remove = (id) =>
   db.prepare('DELETE FROM payments WHERE id = ?').run(id);
 
-module.exports = { findAll, findByPatient, findById, findInadimplencia, create, remove };
+module.exports = { findAll, findByPatient, findById, findInadimplencia, create, update, remove };

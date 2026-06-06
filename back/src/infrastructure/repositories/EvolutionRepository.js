@@ -14,7 +14,13 @@ const create = ({ patientId, proc, data, hora, notas, proxConsulta }) => {
   return findById(id);
 };
 
+const update = (id, { proc, data, hora, notas, proxConsulta }) => {
+  db.prepare('UPDATE evolutions SET proc=?, data=?, hora=?, notas=?, proxConsulta=? WHERE id=?')
+    .run(proc, data, hora, notas, proxConsulta, id);
+  return findById(id);
+};
+
 const remove = (id) =>
   db.prepare('DELETE FROM evolutions WHERE id = ?').run(id);
 
-module.exports = { findByPatient, findById, create, remove };
+module.exports = { findByPatient, findById, create, update, remove };

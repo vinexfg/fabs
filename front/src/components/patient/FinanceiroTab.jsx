@@ -27,7 +27,9 @@ function today() { return new Date().toISOString().split('T')[0] }
 
 export default function FinanceiroTab({ patientId, patient, clinic, treatments, payments, onRefresh }) {
   const [showForm, setShowForm] = useState(false)
+  const [editPayment, setEditPayment] = useState(null)
   const [form, setForm] = useState({ descricao: '', valor: '', data: today(), forma: 'pix' })
+  const [editForm, setEditForm] = useState({ descricao: '', valor: '', data: '', forma: 'pix' })
   const [printPayment, setPrintPayment] = useState(null)
   const reciboRef = useRef()
   const toast = useToast()
@@ -61,6 +63,21 @@ export default function FinanceiroTab({ patientId, patient, clinic, treatments, 
   function handlePrintRecibo(payment) {
     setPrintPayment(payment)
     setTimeout(() => printRecibo(), 50)
+  }
+
+  function openEdit(payment) {
+    setEditForm({ descricao: payment.descricao, valor: payment.valor, data: payment.data || '', forma: payment.forma || 'pix' })
+    setEditPayment(payment)
+  }
+
+  async function handleEditSave() {
+    if (!editForm.descricao.trim() || !editForm.valor || parseFloat(editForm.valor) <= 0) return
+    try {
+      await PaymentRepository.update(editPayment.id, { ...editForm, valor: parseFloat(editForm.valor) })
+      toast('Pagamento atualizado!', 'success')
+      setEditPayment(null)
+      onRefresh()
+    } catch (error) { toast(error.message, 'error') }
   }
 
   return (
@@ -102,6 +119,7 @@ export default function FinanceiroTab({ patientId, patient, clinic, treatments, 
                 <div className={styles.tableRowRight}>
                   <span className={styles.tableRowValue}>{fmtR(parseFloat(payment.valor))}</span>
                   <button className="btn-secondary btn-sm" title="Imprimir recibo" onClick={() => handlePrintRecibo(payment)}>🖨️</button>
+                  <button className="btn-secondary btn-sm" title="Editar" onClick={() => openEdit(payment)}>✏️</button>
                   <button className="btn-danger btn-sm" onClick={() => handleDelete(payment.id)}>🗑️</button>
                 </div>
               </div>
@@ -112,6 +130,31 @@ export default function FinanceiroTab({ patientId, patient, clinic, treatments, 
       <div style={{ display: 'none' }}>
         <ReciboPrint ref={reciboRef} patient={patient} clinic={clinic} payment={printPayment} />
       </div>
+
+      {editPayment && (
+        <Modal title="Editar Pagamento" onClose={() => setEditPayment(null)} onSave={handleEditSave}>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="label">Descrição *</label>
+              <input className="input mt-1.5" value={editForm.descricao} onChange={e => setEditForm(f => ({ ...f, descricao: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Valor (R$) *</label>
+              <input className="input mt-1.5" type="number" min="0" step="0.01" value={editForm.valor} onChange={e => setEditForm(f => ({ ...f, valor: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">Data</label>
+              <input className="input mt-1.5" type="date" value={editForm.data} onChange={e => setEditForm(f => ({ ...f, data: e.target.value }))} />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Forma de pagamento</label>
+              <select className="input mt-1.5" value={editForm.forma} onChange={e => setEditForm(f => ({ ...f, forma: e.target.value }))}>
+                {Object.entries(FORMAS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {showForm && (
         <Modal title="Registrar Pagamento" onClose={() => setShowForm(false)} onSave={handleSave}>

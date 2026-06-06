@@ -15,6 +15,7 @@ import PatientFilePrint from '../components/patient/print/PatientFilePrint'
 import ReceitaPrint from '../components/patient/print/ReceitaPrint'
 import AtestadoPrint from '../components/patient/print/AtestadoPrint'
 import { usePrint } from '../components/patient/print/usePrint'
+import OrcamentoTab from '../components/patient/OrcamentoTab'
 import styles from './PatientDetail.module.css'
 
 const TABS = [
@@ -23,6 +24,7 @@ const TABS = [
   { id: 'tratamento',  label: 'Tratamento',  icon: '⚕️' },
   { id: 'financeiro',  label: 'Financeiro',  icon: '💰' },
   { id: 'evolucoes',   label: 'Evoluções',   icon: '📝' },
+  { id: 'orcamento',   label: 'Orçamento',   icon: '📋' },
 ]
 
 function formatCurrency(value) {
@@ -177,6 +179,7 @@ export default function PatientDetail() {
       {activeTab === 'tratamento'  && <TratamentoTab patientId={id} treatments={treatments} onRefresh={loadAll} />}
       {activeTab === 'financeiro'  && <FinanceiroTab patientId={id} patient={patient} clinic={clinic} treatments={treatments} payments={payments} onRefresh={loadAll} />}
       {activeTab === 'evolucoes'   && <EvolusaoTab patientId={id} evolutions={evolutions} onRefresh={loadAll} />}
+      {activeTab === 'orcamento'   && <OrcamentoTab patientId={id} patient={patient} clinic={clinic} />}
 
       {editing && <PatientForm initial={patient} onSave={handleEdit} onClose={() => setEditing(false)} />}
 

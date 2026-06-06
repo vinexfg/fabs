@@ -11,9 +11,14 @@ const create = (req, res) => {
   res.json(evolutionRepository.create(req.body));
 };
 
+const update = (req, res) => {
+  if (!req.body.proc || !req.body.data) return res.status(400).json({ error: 'proc e data são obrigatórios' });
+  res.json(evolutionRepository.update(req.params.id, req.body));
+};
+
 const remove = (req, res) => {
   evolutionRepository.remove(req.params.id);
   res.json({ ok: true });
 };
 
-module.exports = { listByPatient, create, remove };
+module.exports = { listByPatient, create, update, remove };

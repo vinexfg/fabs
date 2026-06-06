@@ -23,8 +23,8 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <ToastProvider>
+      <ToastProvider>
+        <AuthProvider>
           <ConfirmProvider>
             <GlobalSearchProvider>
             <Routes>
@@ -50,8 +50,8 @@ export default function App() {
             </Routes>
             </GlobalSearchProvider>
           </ConfirmProvider>
-        </ToastProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   )
 }

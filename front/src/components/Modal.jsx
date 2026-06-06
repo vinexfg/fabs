@@ -1,10 +1,10 @@
 import React from 'react'
 import styles from './Modal.module.css'
 
-export default function Modal({ title, onClose, onSave, saveLabel = 'Salvar', children }) {
+export default function Modal({ title, onClose, onSave, saveLabel = 'Salvar', children, wide }) {
   return (
     <div className={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className={styles.box}>
+      <div className={wide ? styles.boxWide : styles.box}>
         <div className={styles.header}>
           <h2 className={styles.title}>{title}</h2>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>

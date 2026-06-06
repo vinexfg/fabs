@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PaymentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
+import { exportRelatorioCSV } from '../utils/exportCsv'
 import styles from './Relatorios.module.css'
 
 const FORMAS = {
@@ -102,6 +103,14 @@ export default function Relatorios() {
           <h1 className={styles.title}>Relatórios Financeiros</h1>
           <p className={styles.subtitle}>Visão geral das receitas</p>
         </div>
+        {tab === 'receitas' && filtered.length > 0 && (
+          <button
+            className="btn-secondary"
+            onClick={() => exportRelatorioCSV(filtered, { from: filterFrom, to: filterTo })}
+          >
+            ⬇️ Exportar CSV
+          </button>
+        )}
       </div>
 
       <div className={styles.tabBar}>

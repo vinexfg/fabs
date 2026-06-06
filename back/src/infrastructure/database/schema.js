@@ -100,11 +100,23 @@ const createTables = () => {
       valor REAL DEFAULT 0,
       obs TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS budgets (
+      id TEXT PRIMARY KEY,
+      patientId TEXT NOT NULL,
+      items TEXT DEFAULT '[]',
+      desconto REAL DEFAULT 0,
+      obs TEXT,
+      status TEXT DEFAULT 'rascunho',
+      criadoEm TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (patientId) REFERENCES patients(id)
+    );
   `);
 };
 
 const runMigrations = () => {
   try { db.exec('ALTER TABLE patients ADD COLUMN foto TEXT'); } catch {}
+  try { db.exec('ALTER TABLE patients ADD COLUMN anamnese TEXT'); } catch {}
 
   // Migra senha de SHA-256 para bcrypt se ainda não foi migrada
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('password');

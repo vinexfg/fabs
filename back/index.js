@@ -22,6 +22,7 @@ app.use('/api/odontograma',  require('./src/interfaces/routes/odontograma'));
 app.use('/api/settings',     require('./src/interfaces/routes/settings'));
 app.use('/api/templates',    require('./src/interfaces/routes/templates'));
 app.use('/api/backup',       require('./src/interfaces/routes/backup'));
+app.use('/api/budgets',      require('./src/interfaces/routes/budgets'));
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, _next) => {

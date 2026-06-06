@@ -2,9 +2,18 @@ import React, { useState, useRef } from 'react'
 import Modal from '../Modal'
 import styles from './PatientForm.module.css'
 
+const ALERGIAS_OPTS = ['Anestésico local', 'Penicilina / Amoxicilina', 'AAS / Aspirina', 'Anti-inflamatórios', 'Látex', 'Dipirona', 'Sulfas']
+const CONDS_OPTS    = ['Diabetes', 'Hipertensão', 'Cardiopatia', 'Marca-passo', 'Gravidez', 'HIV/AIDS', 'Hepatite B ou C', 'Epilepsia', 'Osteoporose', 'Asma', 'Distúrbio de coagulação', 'Uso de bisfosfonatos']
+
 const EMPTY = {
   nome: '', dataNascimento: '', cpf: '', telefone: '', email: '',
   endereco: '', convenio: '', alergias: '', medicamentos: '', conds: '', queixa: '', foto: '',
+  anamnese: null,
+}
+
+function parseAnamnese(raw) {
+  if (!raw) return { alergiasCheck: [], condsCheck: [], alergiasExtra: '', condsExtra: '', medicamentos: '', queixa: '' }
+  try { return JSON.parse(raw) } catch { return { alergiasCheck: [], condsCheck: [], alergiasExtra: '', condsExtra: '', medicamentos: '', queixa: '' } }
 }
 
 function resizeImage(file, maxSize = 200) {
@@ -24,11 +33,28 @@ function resizeImage(file, maxSize = 200) {
   })
 }
 
+function Checkbox({ label, checked, onChange }) {
+  return (
+    <label className={styles.checkLabel}>
+      <input type="checkbox" className={styles.checkInput} checked={checked} onChange={onChange} />
+      <span>{label}</span>
+    </label>
+  )
+}
+
 export default function PatientForm({ initial = {}, onSave, onClose }) {
-  const [form, setForm] = useState({ ...EMPTY, ...initial })
+  const [form, setForm]         = useState({ ...EMPTY, ...initial })
+  const [anamnese, setAnamnese] = useState(() => parseAnamnese(initial.anamnese))
   const fileRef = useRef()
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  function toggleCheck(field, val) {
+    setAnamnese(a => {
+      const list = a[field] || []
+      return { ...a, [field]: list.includes(val) ? list.filter(x => x !== val) : [...list, val] }
+    })
+  }
 
   async function handlePhotoChange(e) {
     const file = e.target.files?.[0]
@@ -39,7 +65,17 @@ export default function PatientForm({ initial = {}, onSave, onClose }) {
 
   function handleSave() {
     if (!form.nome.trim()) return
-    onSave(form)
+    // Monta os campos de texto legados a partir da anamnese estruturada
+    const alergiasText = [...(anamnese.alergiasCheck || []), anamnese.alergiasExtra].filter(Boolean).join(', ')
+    const condsText    = [...(anamnese.condsCheck    || []), anamnese.condsExtra   ].filter(Boolean).join(', ')
+    onSave({
+      ...form,
+      alergias:     alergiasText || form.alergias,
+      medicamentos: anamnese.medicamentos || form.medicamentos,
+      conds:        condsText    || form.conds,
+      queixa:       anamnese.queixa       || form.queixa,
+      anamnese:     JSON.stringify(anamnese),
+    })
   }
 
   return (
@@ -97,24 +133,61 @@ export default function PatientForm({ initial = {}, onSave, onClose }) {
       </div>
 
       <div className={styles.divider} />
-      <p className={styles.sectionLabel}>Histórico Médico</p>
+      <p className={styles.sectionLabel}>Anamnese</p>
 
-      <div className={styles.formGrid}>
-        <div className="col-span-2">
-          <label className="label">Alergias</label>
-          <input className="input mt-1.5" value={form.alergias} onChange={set('alergias')} placeholder="Anestésico, penicilina..." />
+      <div className={styles.anamneseSection}>
+        <p className={styles.anamneseGroup}>Alergias conhecidas</p>
+        <div className={styles.checkGrid}>
+          {ALERGIAS_OPTS.map(opt => (
+            <Checkbox
+              key={opt} label={opt}
+              checked={(anamnese.alergiasCheck || []).includes(opt)}
+              onChange={() => toggleCheck('alergiasCheck', opt)}
+            />
+          ))}
         </div>
-        <div className="col-span-2">
+        <input
+          className="input mt-2"
+          value={anamnese.alergiasExtra || ''}
+          onChange={e => setAnamnese(a => ({ ...a, alergiasExtra: e.target.value }))}
+          placeholder="Outras alergias..."
+        />
+
+        <p className={`${styles.anamneseGroup} mt-4`}>Condições médicas</p>
+        <div className={styles.checkGrid}>
+          {CONDS_OPTS.map(opt => (
+            <Checkbox
+              key={opt} label={opt}
+              checked={(anamnese.condsCheck || []).includes(opt)}
+              onChange={() => toggleCheck('condsCheck', opt)}
+            />
+          ))}
+        </div>
+        <input
+          className="input mt-2"
+          value={anamnese.condsExtra || ''}
+          onChange={e => setAnamnese(a => ({ ...a, condsExtra: e.target.value }))}
+          placeholder="Outras condições..."
+        />
+
+        <div className="mt-4">
           <label className="label">Medicamentos em uso</label>
-          <input className="input mt-1.5" value={form.medicamentos} onChange={set('medicamentos')} />
+          <input
+            className="input mt-1.5"
+            value={anamnese.medicamentos || ''}
+            onChange={e => setAnamnese(a => ({ ...a, medicamentos: e.target.value }))}
+            placeholder="Nome, dosagem..."
+          />
         </div>
-        <div className="col-span-2">
-          <label className="label">Condições médicas</label>
-          <textarea className="input mt-1.5 resize-none" rows={2} value={form.conds} onChange={set('conds')} placeholder="Diabetes, hipertensão..." />
-        </div>
-        <div className="col-span-2">
+
+        <div className="mt-3">
           <label className="label">Queixa principal</label>
-          <input className="input mt-1.5" value={form.queixa} onChange={set('queixa')} placeholder="Motivo da consulta..." />
+          <input
+            className="input mt-1.5"
+            value={anamnese.queixa || ''}
+            onChange={e => setAnamnese(a => ({ ...a, queixa: e.target.value }))}
+            placeholder="Motivo da consulta..."
+          />
         </div>
       </div>
     </Modal>
