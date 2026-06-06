@@ -2,16 +2,33 @@
   @apply flex min-h-screen;
 }
 
+/* ── Overlay mobile ── */
+.overlay {
+  @apply fixed inset-0 z-30 bg-black/50 backdrop-blur-sm;
+}
+
+/* ── Sidebar ── */
 .sidebar {
-  @apply w-60 flex flex-col fixed top-0 left-0 h-screen z-20;
-  background: rgba(255,255,255,0.95);
+  @apply w-60 flex flex-col fixed top-0 left-0 h-screen z-40;
+  background: rgba(255,255,255,0.97);
   border-right: 1px solid rgba(226,232,240,0.8);
   box-shadow: 1px 0 20px rgba(0,0,0,0.04);
   backdrop-filter: blur(12px);
+  transition: transform 0.25s ease;
+}
+
+/* Mobile: esconde sidebar por padrão */
+@media (max-width: 767px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebarOpen {
+    transform: translateX(0);
+  }
 }
 
 :global(.dark) .sidebar {
-  background: rgba(10,14,26,0.95);
+  background: rgba(10,14,26,0.97);
   border-right: 1px solid rgba(30,41,59,0.8);
   box-shadow: 1px 0 20px rgba(0,0,0,0.3);
 }
@@ -29,8 +46,12 @@
   @apply flex items-center gap-3;
 }
 
+.logoText {
+  @apply flex-1 min-w-0;
+}
+
 .logoIcon {
-  @apply w-9 h-9 rounded-xl flex items-center justify-center text-lg;
+  @apply w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0;
   background: linear-gradient(135deg, #3b82f6, #6366f1);
   box-shadow: 0 4px 12px rgba(59,130,246,0.35);
 }
@@ -41,6 +62,18 @@
 
 .logoSubtitle {
   @apply text-[11px] text-slate-400 font-medium;
+}
+
+/* Botão fechar sidebar no mobile */
+.closeMobileBtn {
+  @apply hidden text-slate-400 hover:text-slate-700 dark:hover:text-slate-200
+         text-lg font-bold p-1 leading-none transition-colors shrink-0;
+}
+
+@media (max-width: 767px) {
+  .closeMobileBtn {
+    @apply block;
+  }
 }
 
 .searchBtn {
@@ -137,6 +170,41 @@
          transition-all duration-150;
 }
 
+/* ── Main content ── */
 .main {
   @apply ml-60 flex-1 p-6 min-h-screen;
+}
+
+@media (max-width: 767px) {
+  .main {
+    @apply ml-0 p-4;
+  }
+}
+
+/* ── Mobile top bar (hamburguer) ── */
+.mobileTopBar {
+  @apply hidden items-center justify-between mb-5 gap-3;
+}
+
+@media (max-width: 767px) {
+  .mobileTopBar {
+    @apply flex;
+  }
+}
+
+.mobileLogoRow {
+  @apply flex items-center gap-2 flex-1;
+}
+
+.hamburger {
+  @apply flex flex-col gap-1.5 p-2 rounded-xl
+         bg-slate-100 dark:bg-slate-800 shrink-0;
+}
+
+.hamburger span {
+  @apply block w-5 h-0.5 bg-slate-600 dark:bg-slate-300 rounded-full;
+}
+
+.mobileSearchBtn {
+  @apply p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-base shrink-0;
 }

@@ -1,5 +1,5 @@
-import React from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { useGlobalSearch } from '../context/GlobalSearchContext'
@@ -18,27 +18,40 @@ export default function Layout({ children }) {
   const { logout } = useAuth()
   const { setOpen: openSearch } = useGlobalSearch()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   function handleLogout() {
     logout()
     navigate('/login', { replace: true })
   }
 
+  function closeMobile() {
+    setMobileOpen(false)
+  }
+
   return (
     <div className={styles.root}>
       <GlobalSearch />
-      <aside className={styles.sidebar}>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className={styles.overlay} onClick={closeMobile} />
+      )}
+
+      <aside className={`${styles.sidebar} ${mobileOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.logoSection}>
           <div className={styles.logoRow}>
             <div className={styles.logoIcon}>🦷</div>
-            <div>
+            <div className={styles.logoText}>
               <h1 className={styles.logoTitle}>DenteFácil</h1>
               <p className={styles.logoSubtitle}>Gestão de Pacientes</p>
             </div>
+            <button className={styles.closeMobileBtn} onClick={closeMobile}>✕</button>
           </div>
         </div>
 
-        <button className={styles.searchBtn} onClick={() => openSearch(true)}>
+        <button className={styles.searchBtn} onClick={() => { openSearch(true); closeMobile() }}>
           <span>🔍</span>
           <span className={styles.searchBtnText}>Buscar...</span>
           <kbd className={styles.searchKbd}>Ctrl K</kbd>
@@ -51,6 +64,7 @@ export default function Layout({ children }) {
               key={l.to}
               to={l.to}
               end={l.end}
+              onClick={closeMobile}
               className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}
             >
               <span>{l.icon}</span>
@@ -62,6 +76,7 @@ export default function Layout({ children }) {
         <div className={styles.bottomSection}>
           <NavLink
             to="/settings"
+            onClick={closeMobile}
             className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}
           >
             <span>⚙️</span>
@@ -78,7 +93,20 @@ export default function Layout({ children }) {
         </div>
       </aside>
 
-      <main className={styles.main}>{children}</main>
+      <main className={styles.main}>
+        {/* Mobile top bar */}
+        <div className={styles.mobileTopBar}>
+          <button className={styles.hamburger} onClick={() => setMobileOpen(true)}>
+            <span /><span /><span />
+          </button>
+          <div className={styles.mobileLogoRow}>
+            <div className={styles.logoIcon}>🦷</div>
+            <span className={styles.logoTitle}>DenteFácil</span>
+          </div>
+          <button className={styles.mobileSearchBtn} onClick={() => openSearch(true)}>🔍</button>
+        </div>
+        {children}
+      </main>
     </div>
   )
 }

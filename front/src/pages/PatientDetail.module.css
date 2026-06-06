@@ -15,7 +15,7 @@
 }
 
 .headerInner {
-  @apply flex items-start gap-5;
+  @apply flex flex-col sm:flex-row items-start gap-4;
 }
 
 .patientAvatar {
@@ -49,24 +49,31 @@
 }
 
 .actions {
-  @apply flex gap-2 shrink-0 flex-wrap;
+  @apply flex gap-2 flex-wrap w-full sm:w-auto;
 }
 
 /* Tab bar */
 .tabBar {
-  @apply flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-5;
+  @apply flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-5
+         overflow-x-auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tabBar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
-  @apply flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold
-         rounded-xl transition-all duration-150
+  @apply flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm font-semibold
+         rounded-xl transition-all duration-150 shrink-0
          text-slate-500 dark:text-slate-400
          hover:text-slate-700 dark:hover:text-slate-300;
 }
 
 .tabActive {
-  @apply flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold
-         rounded-xl transition-all duration-150
+  @apply flex items-center justify-center gap-1.5 py-2.5 px-3 text-xs sm:text-sm font-semibold
+         rounded-xl transition-all duration-150 shrink-0
          bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm;
 }
 
