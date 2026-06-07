@@ -19,6 +19,15 @@ const findByMonth = (month) =>
     ORDER BY a.date, a.time
   `).all(`${month}%`);
 
+const findByWeek = (startDate) =>
+  db.prepare(`
+    SELECT a.*, p.nome as patientNome, p.telefone as patientTelefone
+    FROM appointments a
+    JOIN patients p ON p.id = a.patientId
+    WHERE a.date >= ? AND a.date < date(?, '+7 days')
+    ORDER BY a.date, a.time
+  `).all(startDate, startDate);
+
 const findAll = () =>
   db.prepare(`
     SELECT a.*, p.nome as patientNome
@@ -74,4 +83,4 @@ const updateStatus = (id, status) => {
 const remove = (id) =>
   db.prepare('DELETE FROM appointments WHERE id = ?').run(id);
 
-module.exports = { findByDate, findByMonth, findAll, findTomorrow, findByPatient, findById, create, update, updateStatus, remove };
+module.exports = { findByDate, findByMonth, findByWeek, findAll, findTomorrow, findByPatient, findById, create, update, updateStatus, remove };

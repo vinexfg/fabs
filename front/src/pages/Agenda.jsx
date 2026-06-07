@@ -45,6 +45,24 @@ function getCalendarDays(year, month) {
   return days
 }
 
+// Returns Monday of the week that contains `dateStr`
+function getWeekStart(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00')
+  const day = d.getDay() // 0=Sun
+  const diff = (day === 0 ? -6 : 1 - day)
+  d.setDate(d.getDate() + diff)
+  return toISO(d)
+}
+
+function getWeekDays(weekStartISO) {
+  const start = new Date(weekStartISO + 'T12:00:00')
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    return d
+  })
+}
+
 const EMPTY_FORM = { patientId: '', date: today(), time: '09:00', duration: 60, type: 'Consulta', notes: '' }
 
 export default function Agenda() {
@@ -52,12 +70,14 @@ export default function Agenda() {
   const [selected, setSelected]   = useState(today())
   const [monthAppts, setMonthAppts] = useState([])
   const [dayAppts, setDayAppts]   = useState([])
+  const [weekAppts, setWeekAppts] = useState([])
   const [patients, setPatients]   = useState([])
   const [showForm, setShowForm]   = useState(false)
   const [form, setForm]           = useState(EMPTY_FORM)
   const [filterStatus, setFilterStatus] = useState('')
   const [filterType, setFilterType]     = useState('')
   const [mobileView, setMobileView]     = useState('list')
+  const [calView, setCalView]           = useState('month')
   const navigate = useNavigate()
   const toast    = useToast()
   const confirm  = useConfirm()
@@ -72,14 +92,37 @@ export default function Agenda() {
     catch {}
   }, [])
 
+  const loadWeek = useCallback(async (date) => {
+    try { setWeekAppts(await AppointmentRepository.findByWeek(getWeekStart(date))) }
+    catch {}
+  }, [])
+
   useEffect(() => { PatientRepository.findAll().then(setPatients).catch(() => {}) }, [])
   useEffect(() => { loadMonth(ref) }, [ref])
   useEffect(() => { loadDay(selected) }, [selected])
+  useEffect(() => { if (calView === 'week') loadWeek(selected) }, [selected, calView])
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
   function prevMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()-1, 1)) }
   function nextMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()+1, 1)) }
+
+  function prevWeek() {
+    const ws = getWeekStart(selected)
+    const d  = new Date(ws + 'T12:00:00')
+    d.setDate(d.getDate() - 7)
+    const newSel = toISO(d)
+    setSelected(newSel)
+    setRef(new Date(d.getFullYear(), d.getMonth(), 1))
+  }
+  function nextWeek() {
+    const ws = getWeekStart(selected)
+    const d  = new Date(ws + 'T12:00:00')
+    d.setDate(d.getDate() + 7)
+    const newSel = toISO(d)
+    setSelected(newSel)
+    setRef(new Date(d.getFullYear(), d.getMonth(), 1))
+  }
   function openForm(date) { setForm({ ...EMPTY_FORM, date }); setShowForm(true) }
 
   async function handleSave() {
@@ -100,17 +143,28 @@ export default function Agenda() {
       setForm(EMPTY_FORM)
       loadMonth(ref)
       loadDay(selected)
+      if (calView === 'week') loadWeek(selected)
     } catch (error) { toast(error.message, 'error') }
   }
 
   async function handleStatus(appointmentId, status) {
-    try { await AppointmentRepository.updateStatus(appointmentId, status); loadDay(selected); loadMonth(ref) }
+    try {
+      await AppointmentRepository.updateStatus(appointmentId, status)
+      loadDay(selected)
+      loadMonth(ref)
+      if (calView === 'week') loadWeek(selected)
+    }
     catch (error) { toast(error.message, 'error') }
   }
 
   async function handleDelete(appointmentId) {
     if (!await confirm('Remover esta consulta?')) return
-    try { await AppointmentRepository.remove(appointmentId); loadDay(selected); loadMonth(ref) }
+    try {
+      await AppointmentRepository.remove(appointmentId)
+      loadDay(selected)
+      loadMonth(ref)
+      if (calView === 'week') loadWeek(selected)
+    }
     catch (error) { toast(error.message, 'error') }
   }
 
@@ -150,50 +204,89 @@ export default function Agenda() {
         >📅 Calendário</button>
       </div>
 
+      <div className={styles.calViewToggle}>
+        <button
+          onClick={() => setCalView('month')}
+          className={calView === 'month' ? styles.calViewActive : styles.calViewBtn}
+        >Mês</button>
+        <button
+          onClick={() => { setCalView('week'); loadWeek(selected) }}
+          className={calView === 'week' ? styles.calViewActive : styles.calViewBtn}
+        >Semana</button>
+      </div>
+
       <div className={styles.layout}>
         <div className={`${styles.calCard} ${mobileView === 'list' ? styles.calCardMobileHidden : ''}`}>
-          <div className={styles.calNav}>
-            <button className="btn-secondary btn-sm" onClick={prevMonth}>‹</button>
-            <h2 className={styles.calMonth}>{MONTHS[ref.getMonth()]} {ref.getFullYear()}</h2>
-            <button className="btn-secondary btn-sm" onClick={nextMonth}>›</button>
-          </div>
+          {calView === 'week' ? (
+            <>
+              <div className={styles.calNav}>
+                <button className="btn-secondary btn-sm" onClick={prevWeek}>‹</button>
+                <h2 className={styles.calMonth}>
+                  {(() => {
+                    const ws = getWeekStart(selected)
+                    const we = new Date(ws + 'T12:00:00')
+                    we.setDate(we.getDate() + 6)
+                    return `${formatSelectedDate(ws)} – ${formatSelectedDate(toISO(we))}`
+                  })()}
+                </h2>
+                <button className="btn-secondary btn-sm" onClick={nextWeek}>›</button>
+              </div>
+              <WeekView
+                weekStart={getWeekStart(selected)}
+                appts={weekAppts}
+                selected={selected}
+                todayStr={todayStr}
+                onSelectDay={setSelected}
+                onOpenForm={openForm}
+                STATUS_CHIP={STATUS_CHIP}
+              />
+            </>
+          ) : (
+            <>
+              <div className={styles.calNav}>
+                <button className="btn-secondary btn-sm" onClick={prevMonth}>‹</button>
+                <h2 className={styles.calMonth}>{MONTHS[ref.getMonth()]} {ref.getFullYear()}</h2>
+                <button className="btn-secondary btn-sm" onClick={nextMonth}>›</button>
+              </div>
 
-          <div className={styles.calDayHeaders}>
-            {DAYS.map(d => <div key={d} className={styles.calDayHeader}>{d}</div>)}
-          </div>
+              <div className={styles.calDayHeaders}>
+                {DAYS.map(d => <div key={d} className={styles.calDayHeader}>{d}</div>)}
+              </div>
 
-          <div className={styles.calGrid}>
-            {calDays.map((day, i) => {
-              if (!day) return <div key={`e${i}`} />
-              const iso       = toISO(day)
-              const appts     = apptByDate[iso] || []
-              const isToday   = iso === todayStr
-              const isSelected = iso === selected
-              return (
-                <div
-                  key={iso}
-                  onClick={() => setSelected(iso)}
-                  className={`${styles.calDay} ${isSelected ? styles.calDaySelected : isToday ? styles.calDayToday : styles.calDayDefault}`}
-                >
-                  <p className={`${styles.calDayNum} ${isSelected ? styles.calDayNumSelected : isToday ? styles.calDayNumToday : styles.calDayNumDefault}`}>
-                    {day.getDate()}
-                  </p>
-                  <div className={styles.calDayAppts}>
-                    {appts.slice(0,2).map(a => (
-                      <div key={a.id} className={`${styles.calChip} ${isSelected ? styles.calChipSelected : STATUS_CHIP[a.status]}`}>
-                        {a.time} {a.patientNome?.split(' ')[0]}
+              <div className={styles.calGrid}>
+                {calDays.map((day, i) => {
+                  if (!day) return <div key={`e${i}`} />
+                  const iso       = toISO(day)
+                  const appts     = apptByDate[iso] || []
+                  const isToday   = iso === todayStr
+                  const isSelected = iso === selected
+                  return (
+                    <div
+                      key={iso}
+                      onClick={() => setSelected(iso)}
+                      className={`${styles.calDay} ${isSelected ? styles.calDaySelected : isToday ? styles.calDayToday : styles.calDayDefault}`}
+                    >
+                      <p className={`${styles.calDayNum} ${isSelected ? styles.calDayNumSelected : isToday ? styles.calDayNumToday : styles.calDayNumDefault}`}>
+                        {day.getDate()}
+                      </p>
+                      <div className={styles.calDayAppts}>
+                        {appts.slice(0,2).map(a => (
+                          <div key={a.id} className={`${styles.calChip} ${isSelected ? styles.calChipSelected : STATUS_CHIP[a.status]}`}>
+                            {a.time} {a.patientNome?.split(' ')[0]}
+                          </div>
+                        ))}
+                        {appts.length > 2 && (
+                          <div className={`${styles.calMore} ${isSelected ? styles.calMoreSelected : styles.calMoreDefault}`}>
+                            +{appts.length - 2}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                    {appts.length > 2 && (
-                      <div className={`${styles.calMore} ${isSelected ? styles.calMoreSelected : styles.calMoreDefault}`}>
-                        +{appts.length - 2}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         <div className={styles.dayPanel}>
@@ -305,6 +398,56 @@ export default function Agenda() {
           </div>
         </Modal>
       )}
+    </div>
+  )
+}
+
+const WEEK_DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+
+function WeekView({ weekStart, appts, selected, todayStr, onSelectDay, onOpenForm, STATUS_CHIP }) {
+  const days = getWeekDays(weekStart)
+  const byDate = appts.reduce((acc, a) => {
+    acc[a.date] = acc[a.date] || []
+    acc[a.date].push(a)
+    return acc
+  }, {})
+
+  return (
+    <div className={styles.weekGrid}>
+      {days.map((day, i) => {
+        const iso = toISO(day)
+        const dayAppts = byDate[iso] || []
+        const isToday    = iso === todayStr
+        const isSelected = iso === selected
+        return (
+          <div
+            key={iso}
+            className={`${styles.weekCol} ${isSelected ? styles.weekColSelected : isToday ? styles.weekColToday : styles.weekColDefault}`}
+            onClick={() => onSelectDay(iso)}
+          >
+            <div className={styles.weekColHeader}>
+              <p className={`${styles.weekDayName} ${isSelected ? styles.weekDayNameSelected : ''}`}>{WEEK_DAYS_SHORT[i]}</p>
+              <p className={`${styles.weekDayNum} ${isSelected ? styles.weekDayNumSelected : isToday ? styles.weekDayNumToday : styles.weekDayNumDefault}`}>
+                {day.getDate()}
+              </p>
+            </div>
+            <div className={styles.weekAppts}>
+              {dayAppts.map(a => (
+                <div key={a.id} className={`${styles.weekApptChip} ${isSelected ? styles.calChipSelected : STATUS_CHIP[a.status]}`}>
+                  <span className={styles.weekApptTime}>{a.time?.slice(0,5)}</span>
+                  <span className={styles.weekApptName}>{a.patientNome?.split(' ')[0]}</span>
+                </div>
+              ))}
+              {dayAppts.length === 0 && (
+                <button
+                  className={styles.weekAddBtn}
+                  onClick={e => { e.stopPropagation(); onOpenForm(iso) }}
+                >+</button>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

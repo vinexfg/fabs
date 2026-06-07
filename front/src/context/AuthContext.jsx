@@ -13,26 +13,44 @@ function parseJwtExp(token) {
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('df_token'))
   const toast = useToast()
-  const timerRef = useRef(null)
+  const warnTimerRef   = useRef(null)
+  const logoutTimerRef = useRef(null)
 
-  const scheduleWarning = useCallback((t) => {
-    clearTimeout(timerRef.current)
+  const scheduleTimers = useCallback((t) => {
+    clearTimeout(warnTimerRef.current)
+    clearTimeout(logoutTimerRef.current)
     if (!t) return
     const exp = parseJwtExp(t)
     if (!exp) return
-    const warnAt = exp - 5 * 60 * 1000
-    const delay = warnAt - Date.now()
-    if (delay > 0) {
-      timerRef.current = setTimeout(() => {
+    const now = Date.now()
+
+    const warnDelay = exp - 5 * 60 * 1000 - now
+    if (warnDelay > 0) {
+      warnTimerRef.current = setTimeout(() => {
         toast('Sua sessão expira em 5 minutos. Salve seu trabalho e faça login novamente.', 'warning')
-      }, delay)
+      }, warnDelay)
+    }
+
+    const logoutDelay = exp - now
+    if (logoutDelay > 0) {
+      logoutTimerRef.current = setTimeout(() => {
+        localStorage.removeItem('df_token')
+        setToken(null)
+        toast('Sessão expirada. Faça login novamente.', 'error')
+      }, logoutDelay)
+    } else {
+      localStorage.removeItem('df_token')
+      setToken(null)
     }
   }, [toast])
 
   useEffect(() => {
-    scheduleWarning(token)
-    return () => clearTimeout(timerRef.current)
-  }, [token, scheduleWarning])
+    scheduleTimers(token)
+    return () => {
+      clearTimeout(warnTimerRef.current)
+      clearTimeout(logoutTimerRef.current)
+    }
+  }, [token, scheduleTimers])
 
   const login = useCallback(async (password) => {
     const res = await fetch('/api/auth/login', {
@@ -50,7 +68,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
-    clearTimeout(timerRef.current)
+    clearTimeout(warnTimerRef.current)
+    clearTimeout(logoutTimerRef.current)
     localStorage.removeItem('df_token')
     setToken(null)
   }, [])

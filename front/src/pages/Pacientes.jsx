@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PatientRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
@@ -19,22 +19,58 @@ function calculateAge(dateOfBirth) {
 const PAGE_SIZE = 15
 
 export default function Pacientes() {
-  const [patients, setPatients] = useState([])
-  const [searchQuery, setSearchQuery] = useState('')
+  const [patients, setPatients]     = useState([])
+  const [total, setTotal]           = useState(0)
+  const [allConvenios, setAllConvenios] = useState([])
+  const [searchQuery, setSearchQuery]   = useState('')
   const [convenioFilter, setConvenioFilter] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm]     = useState(false)
+  const [page, setPage]             = useState(1)
+  const [loading, setLoading]       = useState(true)
   const navigate = useNavigate()
-  const toast = useToast()
+  const toast    = useToast()
+  const debounceRef = useRef(null)
 
-  useEffect(() => { load() }, [])
-
-  async function load() {
+  const load = useCallback(async (q, conv, pg) => {
     setLoading(true)
-    try { setPatients(await PatientRepository.findAll()) }
-    catch { toast('Erro ao carregar', 'error') }
+    try {
+      const search = [q, conv && conv !== 'Todos' ? conv : ''].filter(Boolean).join(' ')
+      const result = await PatientRepository.findPaginated({ q: search, page: pg, limit: PAGE_SIZE })
+      setPatients(result.patients)
+      setTotal(result.total)
+    } catch { toast('Erro ao carregar', 'error') }
     finally { setLoading(false) }
+  }, [toast])
+
+  // Load convenios for filter chips once
+  useEffect(() => {
+    PatientRepository.findAll()
+      .then(all => {
+        const convs = [...new Set(all.map(p => p.convenio || 'Particular').filter(Boolean))].sort()
+        setAllConvenios(convs)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => { load(searchQuery, convenioFilter, page) }, [])
+
+  function handleSearchChange(v) {
+    setSearchQuery(v)
+    setPage(1)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => load(v, convenioFilter, 1), 350)
+  }
+
+  function handleConvenioChange(c) {
+    const conv = c === 'Todos' ? '' : c
+    setConvenioFilter(conv)
+    setPage(1)
+    load(searchQuery, conv, 1)
+  }
+
+  function handlePage(newPage) {
+    setPage(newPage)
+    load(searchQuery, convenioFilter, newPage)
   }
 
   async function handleCreate(data) {
@@ -46,30 +82,8 @@ export default function Pacientes() {
     } catch (error) { toast(error.message, 'error') }
   }
 
-  const convenios = ['Todos', ...Array.from(new Set(patients.map(p => p.convenio || 'Particular').filter(Boolean))).sort()]
-
-  const filtered = patients
-    .filter(patient => {
-      if (convenioFilter && convenioFilter !== 'Todos') {
-        if ((patient.convenio || 'Particular') !== convenioFilter) return false
-      }
-      if (!searchQuery) return true
-      const q = searchQuery.toLowerCase()
-      return (
-        patient.nome.toLowerCase().includes(q) ||
-        (patient.telefone || '').includes(searchQuery) ||
-        (patient.cpf || '').replace(/\D/g, '').includes(searchQuery.replace(/\D/g, '')) ||
-        (patient.convenio || '').toLowerCase().includes(q)
-      )
-    })
-    .sort((a, b) => a.nome.localeCompare(b.nome))
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  function onFilterChange(setter) {
-    return v => { setter(v); setPage(1) }
-  }
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+  const convenios  = ['Todos', ...allConvenios]
 
   return (
     <div className={styles.page}>
@@ -77,7 +91,7 @@ export default function Pacientes() {
         <div>
           <h1 className={styles.title}>Pacientes</h1>
           <p className={styles.subtitle}>
-            {patients.length} paciente{patients.length !== 1 ? 's' : ''} cadastrado{patients.length !== 1 ? 's' : ''}
+            {total} paciente{total !== 1 ? 's' : ''} cadastrado{total !== 1 ? 's' : ''}
           </p>
         </div>
         <button className="btn-primary" onClick={() => setShowForm(true)}>
@@ -91,16 +105,16 @@ export default function Pacientes() {
           className="input pl-10"
           placeholder="Buscar por nome, telefone, CPF ou convênio..."
           value={searchQuery}
-          onChange={e => onFilterChange(setSearchQuery)(e.target.value)}
+          onChange={e => handleSearchChange(e.target.value)}
         />
       </div>
 
-      {convenios.length > 2 && (
+      {allConvenios.length > 1 && (
         <div className={styles.chipRow}>
           {convenios.map(c => (
             <button
               key={c}
-              onClick={() => onFilterChange(setConvenioFilter)(c === 'Todos' ? '' : c)}
+              onClick={() => handleConvenioChange(c)}
               className={(convenioFilter === c) || (c === 'Todos' && !convenioFilter) ? styles.chipActive : styles.chip}
             >
               {c}
@@ -113,14 +127,14 @@ export default function Pacientes() {
         ? <SkeletonList rows={6} />
         : (
           <div className={styles.list}>
-            {filtered.length === 0
+            {patients.length === 0
               ? <EmptyState
                   type={searchQuery || convenioFilter ? 'search' : 'patients'}
                   title={searchQuery || convenioFilter ? 'Nenhum resultado' : 'Nenhum paciente ainda'}
                   description={searchQuery || convenioFilter ? 'Tente outros termos de busca.' : 'Cadastre o primeiro paciente para começar.'}
                   action={!searchQuery && !convenioFilter ? { label: '+ Novo Paciente', onClick: () => setShowForm(true) } : undefined}
                 />
-              : paginated.map(patient => (
+              : patients.map(patient => (
                   <PatientCard key={patient.id} patient={patient} onClick={() => navigate(`/pacientes/${patient.id}`)} />
                 ))
             }
@@ -132,15 +146,15 @@ export default function Pacientes() {
         <div className={styles.pagination}>
           <button
             className={styles.pageBtn}
-            onClick={() => setPage(p => Math.max(p - 1, 1))}
+            onClick={() => handlePage(Math.max(page - 1, 1))}
             disabled={page === 1}
           >‹ Anterior</button>
           <span className={styles.pageInfo}>
-            {page} de {totalPages} · {filtered.length} pacientes
+            {page} de {totalPages} · {total} pacientes
           </span>
           <button
             className={styles.pageBtn}
-            onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+            onClick={() => handlePage(Math.min(page + 1, totalPages))}
             disabled={page === totalPages}
           >Próximo ›</button>
         </div>

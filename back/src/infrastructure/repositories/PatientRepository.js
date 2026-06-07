@@ -4,6 +4,18 @@ const { db } = require('../database/connection');
 const findAll = () =>
   db.prepare('SELECT * FROM patients ORDER BY nome').all();
 
+const findPaginated = ({ q = '', page = 1, limit = 15 } = {}) => {
+  const offset = (Number(page) - 1) * Number(limit);
+  const like = `%${q}%`;
+  const where = q
+    ? 'WHERE nome LIKE ? OR telefone LIKE ? OR cpf LIKE ? OR convenio LIKE ?'
+    : '';
+  const params = q ? [like, like, like, like] : [];
+  const rows  = db.prepare(`SELECT * FROM patients ${where} ORDER BY nome LIMIT ? OFFSET ?`).all(...params, Number(limit), offset);
+  const { total } = db.prepare(`SELECT COUNT(*) as total FROM patients ${where}`).get(...params);
+  return { patients: rows, total, page: Number(page), limit: Number(limit) };
+};
+
 const findById = (id) =>
   db.prepare('SELECT * FROM patients WHERE id = ?').get(id);
 
@@ -34,4 +46,4 @@ const remove = (id) => {
   db.prepare('DELETE FROM patients WHERE id = ?').run(id);
 };
 
-module.exports = { findAll, findById, create, update, remove };
+module.exports = { findAll, findPaginated, findById, create, update, remove };

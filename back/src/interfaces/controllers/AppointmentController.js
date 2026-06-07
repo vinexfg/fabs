@@ -1,9 +1,10 @@
 const appointmentRepository = require('../../infrastructure/repositories/AppointmentRepository');
 
 const list = (req, res) => {
-  const { date, month } = req.query;
-  if (date) return res.json(appointmentRepository.findByDate(date));
+  const { date, month, week } = req.query;
+  if (date)  return res.json(appointmentRepository.findByDate(date));
   if (month) return res.json(appointmentRepository.findByMonth(month));
+  if (week)  return res.json(appointmentRepository.findByWeek(week));
   res.json(appointmentRepository.findAll());
 };
 

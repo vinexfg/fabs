@@ -1,6 +1,13 @@
 const patientRepository = require('../../infrastructure/repositories/PatientRepository');
 
 const list = (req, res) => {
+  if (req.query.page !== undefined) {
+    return res.json(patientRepository.findPaginated({
+      q:     req.query.search || '',
+      page:  req.query.page  || 1,
+      limit: req.query.limit || 15,
+    }));
+  }
   res.json(patientRepository.findAll());
 };
 

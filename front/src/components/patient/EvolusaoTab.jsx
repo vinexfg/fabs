@@ -6,6 +6,17 @@ import Modal from '../Modal'
 import { Empty } from '../../pages/Dashboard'
 import styles from './EvolusaoTab.module.css'
 
+const EVO_TEMPLATES = [
+  { label: 'Sem queixas', text: 'Paciente compareceu sem queixas. Procedimento realizado com sucesso. Paciente tolerou bem.' },
+  { label: 'Anestesia', text: 'Realizada anestesia local infiltrativa sem intercorrências. Paciente sem intercorrências anestésicas.' },
+  { label: 'Boa evolução', text: 'Paciente apresentou boa evolução clínica desde a última consulta. Sem sinais de infecção ou inflamação.' },
+  { label: 'Sensível', text: 'Paciente relata sensibilidade leve ao procedimento. Orientado sobre uso de analgésico e retorno em caso de piora.' },
+  { label: 'Pós-op', text: 'Orientações pós-operatórias fornecidas: repouso, dieta pastosa, higiene local cuidadosa e uso de medicação conforme prescrição.' },
+  { label: 'Retorno', text: 'Paciente retornou para avaliação. Evolução satisfatória. Agendado retorno para continuidade do tratamento.' },
+  { label: 'Endodontia', text: 'Realizado acesso endodôntico e instrumentação dos canais. Curativo de demora realizado. Paciente orientado sobre sintomatologia esperada.' },
+  { label: 'Exodontia', text: 'Exodontia realizada sem intercorrências. Sutura realizada. Orientações pós-operatórias fornecidas. Retorno agendado para remoção de sutura.' },
+]
+
 function fmtDate(d) {
   if (!d) return '—'
   const [y, m, day] = d.split('-')
@@ -58,7 +69,7 @@ export default function EvolusaoTab({ patientId, evolutions, onRefresh }) {
     catch (error) { toast(error.message, 'error') }
   }
 
-  const formFields = (vals, setter) => (
+  const formFields = (vals, setter, setterFn) => (
     <div className="grid grid-cols-2 gap-4">
       <div className="col-span-2">
         <label className="label">Procedimento realizado *</label>
@@ -73,7 +84,21 @@ export default function EvolusaoTab({ patientId, evolutions, onRefresh }) {
         <input className="input mt-1.5" type="time" value={vals.hora} onChange={setter('hora')} />
       </div>
       <div className="col-span-2">
-        <label className="label">Notas / Evolução clínica</label>
+        <div className={styles.tplRow}>
+          <label className="label">Notas / Evolução clínica</label>
+          <div className={styles.tplBtns}>
+            {EVO_TEMPLATES.map(t => (
+              <button
+                key={t.label}
+                type="button"
+                className={styles.tplBtn}
+                onClick={() => setterFn(f => ({ ...f, notas: f.notas ? f.notas + '\n' + t.text : t.text }))}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <textarea className="input mt-1.5 resize-none" rows={4} value={vals.notas} onChange={setter('notas')} placeholder="Queixas, observações, evolução do caso..." />
       </div>
       <div className="col-span-2">
@@ -122,13 +147,13 @@ export default function EvolusaoTab({ patientId, evolutions, onRefresh }) {
 
       {showForm && (
         <Modal title="Nova Evolução" onClose={() => setShowForm(false)} onSave={handleSave}>
-          {formFields(form, set)}
+          {formFields(form, set, setForm)}
         </Modal>
       )}
 
       {editEvo && (
         <Modal title="Editar Evolução" onClose={() => setEditEvo(null)} onSave={handleEditSave}>
-          {formFields(editForm, setEdit)}
+          {formFields(editForm, setEdit, setEditForm)}
         </Modal>
       )}
     </div>

@@ -68,3 +68,21 @@
 .hint {
   @apply text-xs text-slate-400 text-center py-5 px-4;
 }
+
+/* Category group label */
+.groupLabel {
+  @apply text-[10px] font-bold uppercase tracking-wider
+         text-slate-400 dark:text-slate-500
+         px-4 py-1.5 mt-1;
+}
+
+/* Avatar variants for evolution/appointment */
+.avatarEvo {
+  @apply bg-violet-50 dark:bg-violet-500/10 text-base;
+  font-size: 1rem;
+}
+
+.avatarAppt {
+  @apply bg-emerald-50 dark:bg-emerald-500/10 text-base;
+  font-size: 1rem;
+}
