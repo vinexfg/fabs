@@ -2,6 +2,33 @@
   @apply animate-fade-up;
 }
 
+/* Mobile view toggle (only visible on small screens) */
+.mobileToggle {
+  @apply hidden gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-5;
+}
+
+@media (max-width: 639px) {
+  .mobileToggle {
+    @apply flex;
+  }
+}
+
+.mobileToggleBtn {
+  @apply flex-1 py-2 text-sm font-semibold rounded-xl text-slate-500 dark:text-slate-400
+         hover:text-slate-700 dark:hover:text-slate-300 transition-all;
+}
+
+.mobileToggleActive {
+  @apply flex-1 py-2 text-sm font-semibold rounded-xl
+         bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm transition-all;
+}
+
+@media (max-width: 639px) {
+  .calCardMobileHidden {
+    @apply hidden;
+  }
+}
+
 .header {
   @apply flex items-center justify-between mb-6;
 }

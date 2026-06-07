@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { PatientRepository, AppointmentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import PatientForm from '../components/patient/PatientForm'
+import { EmptyState } from '../components/EmptyState'
+import { SkeletonStatCards, SkeletonList } from '../components/Skeleton'
 import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
 import styles from './Dashboard.module.css'
 
@@ -24,12 +26,14 @@ export default function Dashboard() {
   const [clinic, setClinic] = useState({})
   const [showForm, setShowForm] = useState(false)
   const [sentReminders, setSentReminders] = useState(new Set())
+  const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const toast = useToast()
 
   useEffect(() => { load() }, [])
 
   async function load() {
+    setLoading(true)
     const today = new Date().toISOString().split('T')[0]
     try {
       const [patientList, todayAppointments, tomorrowAppointments, clinicSettings] = await Promise.all([
@@ -43,6 +47,7 @@ export default function Dashboard() {
       setTomorrowAppts(tomorrowAppointments)
       setClinic(clinicSettings)
     } catch { toast('Erro ao carregar dados', 'error') }
+    finally { setLoading(false) }
   }
 
   function buildWaLink(appt) {
@@ -68,20 +73,28 @@ export default function Dashboard() {
   async function handleCreate(data) {
     try {
       const newPatient = await PatientRepository.create(data)
-      toast('Paciente cadastrado!', 'success')
+      toast('Paciente cadastrado!', 'success', {
+        action: { label: 'Ver ficha', onClick: () => navigate(`/pacientes/${newPatient.id}`) }
+      })
       setShowForm(false)
       navigate(`/pacientes/${newPatient.id}`)
     } catch (error) { toast(error.message, 'error') }
   }
 
-  const recent = [...patients].sort((a, b) => (b.criadoEm ?? '').localeCompare(a.criadoEm ?? '')).slice(0, 6)
   const thisMonth = new Date().toISOString().slice(0, 7)
+  const lastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7)
+  const thisMonthCount = patients.filter(p => p.criadoEm?.startsWith(thisMonth)).length
+  const lastMonthCount = patients.filter(p => p.criadoEm?.startsWith(lastMonth)).length
+  const trend = thisMonthCount - lastMonthCount
+  const recent = [...patients].sort((a, b) => (b.criadoEm ?? '').localeCompare(a.criadoEm ?? '')).slice(0, 6)
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Dashboard</h1>
+          <h1 className={styles.title}>
+            {clinic.clinicName || 'Dashboard'}
+          </h1>
           <p className={styles.subtitle}>
             {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
@@ -91,123 +104,150 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className={styles.statsGrid}>
-        <StatCard label="Total de Pacientes" value={patients.length} icon="👥"
-          bg="bg-blue-50 dark:bg-blue-500/10" text="text-blue-600 dark:text-blue-400" />
-        <StatCard label="Cadastros este mês" value={patients.filter(p => p.criadoEm?.startsWith(thisMonth)).length}
-          icon="🆕" bg="bg-violet-50 dark:bg-violet-500/10" text="text-violet-600 dark:text-violet-400" />
-        <StatCard label="Consultas hoje" value={todayAppts.length} icon="📅"
-          bg="bg-emerald-50 dark:bg-emerald-500/10" text="text-emerald-600 dark:text-emerald-400" />
-      </div>
+      {loading ? (
+        <>
+          <SkeletonStatCards />
+          <SkeletonList rows={3} />
+          <SkeletonList rows={4} />
+        </>
+      ) : (
+        <>
+          <div className={styles.statsGrid}>
+            <StatCard
+              label="Total de Pacientes" value={patients.length} icon="👥"
+              bg="bg-blue-50 dark:bg-blue-500/10" text="text-blue-600 dark:text-blue-400"
+              trend={thisMonthCount > 0 ? `+${thisMonthCount} este mês` : null}
+              trendPositive
+            />
+            <StatCard
+              label="Cadastros este mês" value={thisMonthCount}
+              icon="🆕" bg="bg-violet-50 dark:bg-violet-500/10" text="text-violet-600 dark:text-violet-400"
+              trend={trend !== 0 ? `${trend > 0 ? '+' : ''}${trend} vs mês anterior` : 'igual ao mês anterior'}
+              trendPositive={trend >= 0}
+            />
+            <StatCard
+              label="Consultas hoje" value={todayAppts.length} icon="📅"
+              bg="bg-emerald-50 dark:bg-emerald-500/10" text="text-emerald-600 dark:text-emerald-400"
+              trend={tomorrowAppts.length > 0 ? `${tomorrowAppts.length} amanhã` : null}
+              trendPositive
+            />
+          </div>
 
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Consultas de Hoje</h2>
-          <button className={styles.sectionLink} onClick={() => navigate('/agenda')}>Ver agenda →</button>
-        </div>
-        {todayAppts.length === 0
-          ? <Empty icon="📅" text="Nenhuma consulta agendada para hoje." />
-          : <div className={styles.list}>
-              {todayAppts.map(a => (
-                <div key={a.id} className={`group ${styles.row}`} onClick={() => navigate(`/pacientes/${a.patientId}`)}>
-                  <div className={styles.timeBlock}>
-                    <p className={`${styles.timeValue} text-blue-600 dark:text-blue-400`}>{a.time?.slice(0, 5) || '--'}</p>
-                    <p className={styles.timeDuration}>{a.duration || 60}min</p>
-                  </div>
-                  <div className={styles.rowInfo}>
-                    <p className={styles.rowName}>{a.patientNome}</p>
-                    <p className={styles.rowSub}>{a.type || 'Consulta'}</p>
-                  </div>
-                  <span className={`${styles.statusBadge} ${STATUS_BADGE[a.status] || ''}`}>
-                    {STATUS_LABELS[a.status] || a.status}
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Consultas de Hoje</h2>
+              <button className={styles.sectionLink} onClick={() => navigate('/agenda')}>Ver agenda →</button>
+            </div>
+            {todayAppts.length === 0
+              ? <EmptyState type="appointments" title="Nenhuma consulta hoje" description="Sem consultas agendadas para hoje." />
+              : <div className={styles.list}>
+                  {todayAppts.map(a => (
+                    <div key={a.id} className={`group ${styles.row}`} onClick={() => navigate(`/pacientes/${a.patientId}`)}>
+                      <div className={styles.timeBlock}>
+                        <p className={`${styles.timeValue} text-blue-600 dark:text-blue-400`}>{a.time?.slice(0, 5) || '--'}</p>
+                        <p className={styles.timeDuration}>{a.duration || 60}min</p>
+                      </div>
+                      <div className={styles.rowInfo}>
+                        <p className={styles.rowName}>{a.patientNome}</p>
+                        <p className={styles.rowSub}>{a.type || 'Consulta'}</p>
+                      </div>
+                      <span className={`${styles.statusBadge} ${STATUS_BADGE[a.status] || ''}`}>
+                        {STATUS_LABELS[a.status] || a.status}
+                      </span>
+                      <span className={styles.arrow}>→</span>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+
+          {tomorrowAppts.length > 0 && (
+            <div className={styles.reminderSection}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.reminderTitleRow}>
+                  <span className="text-base">🔔</span>
+                  <h2 className={styles.sectionTitle}>Lembretes de Amanhã</h2>
+                  <span className={styles.reminderBadge}>
+                    {tomorrowAppts.length} consulta{tomorrowAppts.length !== 1 ? 's' : ''}
                   </span>
-                  <span className={styles.arrow}>→</span>
                 </div>
-              ))}
+                <button
+                  className={styles.reminderAllBtn}
+                  onClick={() => {
+                    const withLink = tomorrowAppts.filter(a => buildWaLink(a))
+                    if (withLink.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
+                    openWhatsAppSequential(withLink.map(a => buildWaLink(a)), () => {})
+                    setSentReminders(new Set(tomorrowAppts.map(a => a.id)))
+                    toast(`${withLink.length} lembrete${withLink.length !== 1 ? 's' : ''} sendo aberto${withLink.length !== 1 ? 's' : ''}...`, 'success')
+                  }}
+                >
+                  Enviar todos →
+                </button>
+              </div>
+              <div className={styles.list}>
+                {tomorrowAppts.map(a => {
+                  const waLink = buildWaLink(a)
+                  const sent = sentReminders.has(a.id)
+                  return (
+                    <div key={a.id} className={styles.reminderRow}>
+                      <div className={styles.timeBlock}>
+                        <p className={`${styles.timeValue} text-amber-600 dark:text-amber-400`}>{a.time?.slice(0, 5) || '--'}</p>
+                        <p className={styles.timeDuration}>{a.duration || 60}min</p>
+                      </div>
+                      <div className={styles.rowInfo}>
+                        <p className={styles.rowName}>{a.patientNome}</p>
+                        <p className={styles.rowSub}>
+                          {a.patientTelefone || <span className={styles.noPhone}>Sem telefone</span>}
+                          {a.type ? ` · ${a.type}` : ''}
+                        </p>
+                      </div>
+                      {waLink
+                        ? <a href={waLink} target="_blank" rel="noreferrer"
+                            onClick={() => markSent(a.id)}
+                            className={sent ? styles.waSent : styles.waSend}>
+                            {sent ? '✓ Enviado' : '💬 Enviar'}
+                          </a>
+                        : <span className={styles.waAbsent}>Sem telefone</span>
+                      }
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-        }
-      </div>
+          )}
 
-      {tomorrowAppts.length > 0 && (
-        <div className={styles.reminderSection}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.reminderTitleRow}>
-              <span className="text-base">🔔</span>
-              <h2 className={styles.sectionTitle}>Lembretes de Amanhã</h2>
-              <span className={styles.reminderBadge}>
-                {tomorrowAppts.length} consulta{tomorrowAppts.length !== 1 ? 's' : ''}
-              </span>
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Pacientes Recentes</h2>
+              <button className={styles.sectionLink} onClick={() => navigate('/pacientes')}>Ver todos →</button>
             </div>
-            <button
-              className={styles.reminderAllBtn}
-              onClick={() => {
-                const withLink = tomorrowAppts.filter(a => buildWaLink(a))
-                if (withLink.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
-                openWhatsAppSequential(withLink.map(a => buildWaLink(a)), () => {})
-                setSentReminders(new Set(tomorrowAppts.map(a => a.id)))
-                toast(`${withLink.length} lembrete${withLink.length !== 1 ? 's' : ''} sendo aberto${withLink.length !== 1 ? 's' : ''}...`, 'success')
-              }}
-            >
-              Enviar todos →
-            </button>
-          </div>
-          <div className={styles.list}>
-            {tomorrowAppts.map(a => {
-              const waLink = buildWaLink(a)
-              const sent = sentReminders.has(a.id)
-              return (
-                <div key={a.id} className={styles.reminderRow}>
-                  <div className={styles.timeBlock}>
-                    <p className={`${styles.timeValue} text-amber-600 dark:text-amber-400`}>{a.time?.slice(0, 5) || '--'}</p>
-                    <p className={styles.timeDuration}>{a.duration || 60}min</p>
-                  </div>
-                  <div className={styles.rowInfo}>
-                    <p className={styles.rowName}>{a.patientNome}</p>
-                    <p className={styles.rowSub}>
-                      {a.patientTelefone || <span className={styles.noPhone}>Sem telefone</span>}
-                      {a.type ? ` · ${a.type}` : ''}
-                    </p>
-                  </div>
-                  {waLink
-                    ? <a href={waLink} target="_blank" rel="noreferrer"
-                        onClick={() => markSent(a.id)}
-                        className={sent ? styles.waSent : styles.waSend}>
-                        {sent ? '✓ Enviado' : '💬 Enviar'}
-                      </a>
-                    : <span className={styles.waAbsent}>Sem telefone</span>
-                  }
+            {recent.length === 0
+              ? <EmptyState type="patients" title="Nenhum paciente ainda" description='Clique em "Novo Paciente" para começar.' action={{ label: '+ Novo Paciente', onClick: () => setShowForm(true) }} />
+              : <div className={styles.list}>
+                  {recent.map(p => <PatientRow key={p.id} patient={p} onClick={() => navigate(`/pacientes/${p.id}`)} />)}
                 </div>
-              )
-            })}
+            }
           </div>
-        </div>
+        </>
       )}
-
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Pacientes Recentes</h2>
-          <button className={styles.sectionLink} onClick={() => navigate('/pacientes')}>Ver todos →</button>
-        </div>
-        {recent.length === 0
-          ? <Empty icon="👤" text='Nenhum paciente ainda. Clique em "Novo Paciente" para começar.' />
-          : <div className={styles.list}>
-              {recent.map(p => <PatientRow key={p.id} patient={p} onClick={() => navigate(`/pacientes/${p.id}`)} />)}
-            </div>
-        }
-      </div>
 
       {showForm && <PatientForm onSave={handleCreate} onClose={() => setShowForm(false)} />}
     </div>
   )
 }
 
-function StatCard({ label, value, icon, bg, text }) {
+function StatCard({ label, value, icon, bg, text, trend, trendPositive }) {
   return (
     <div className={styles.statCard}>
       <div className={`${styles.statIcon} ${bg}`}>{icon}</div>
       <div>
         <p className={`${styles.statValue} ${text}`}>{value}</p>
         <p className={styles.statLabel}>{label}</p>
+        {trend && (
+          <p className={`${styles.statTrend} ${trendPositive ? styles.trendUp : styles.trendDown}`}>
+            {trend}
+          </p>
+        )}
       </div>
     </div>
   )

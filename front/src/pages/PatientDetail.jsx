@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { PatientRepository, TreatmentRepository, PaymentRepository, EvolutionRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
+import { SkeletonPatientHeader } from '../components/Skeleton'
 import PatientForm from '../components/patient/PatientForm'
 import FichaTab from '../components/patient/FichaTab'
 import TratamentoTab from '../components/patient/TratamentoTab'
@@ -102,9 +103,9 @@ export default function PatientDetail() {
   }
 
   if (loading) return (
-    <div className={styles.loading}>
-      <span className={styles.loadingIcon}>⚙️</span>
-      <span className={styles.loadingText}>Carregando...</span>
+    <div className={styles.page}>
+      <button className={styles.backBtn} onClick={() => navigate('/pacientes')}>← Voltar</button>
+      <SkeletonPatientHeader />
     </div>
   )
   if (!patient) return null
@@ -145,6 +146,26 @@ export default function PatientDetail() {
                 <Badge variant="blue">🦷 {completedTreatments}/{treatments.length} procedimentos</Badge>
               )}
             </div>
+            {totalTreatments > 0 && (
+              <div className={styles.progressSection}>
+                <div className={styles.progressHeader}>
+                  <span className={styles.progressLabel}>Pagamento</span>
+                  <span className={styles.progressPct}>
+                    {Math.min(100, Math.round((totalPaid / totalTreatments) * 100))}%
+                  </span>
+                </div>
+                <div className={styles.progressTrack}>
+                  <div
+                    className={styles.progressFill}
+                    style={{ width: `${Math.min(100, (totalPaid / totalTreatments) * 100)}%` }}
+                  />
+                </div>
+                <div className={styles.progressAmounts}>
+                  <span>{formatCurrency(totalPaid)} pago</span>
+                  <span>de {formatCurrency(totalTreatments)}</span>
+                </div>
+              </div>
+            )}
           </div>
           <div className={styles.actions}>
             {whatsappPhone && (

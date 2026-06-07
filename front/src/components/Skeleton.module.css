@@ -1,0 +1,73 @@
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(226,232,240,0.7) 25%,
+    rgba(241,245,249,1)   50%,
+    rgba(226,232,240,0.7) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+:global(.dark) .shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(30,41,59,0.9)  25%,
+    rgba(51,65,85,0.55) 50%,
+    rgba(30,41,59,0.9)  75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Stat cards */
+.statCardSkel {
+  @apply rounded-2xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-4;
+  background: rgba(255,255,255,0.9);
+}
+:global(.dark) .statCardSkel { background: rgba(15,23,42,0.8); }
+
+.iconSkel  { width: 3rem; height: 3rem; border-radius: 1rem; flex-shrink: 0; }
+.valueSkel { height: 1.875rem; width: 55%; margin-bottom: 0.375rem; }
+.labelSkel { height: 0.75rem; width: 75%; }
+
+/* Section list */
+.sectionSkel {
+  @apply rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mb-5;
+  background: rgba(255,255,255,0.9);
+}
+:global(.dark) .sectionSkel { background: rgba(15,23,42,0.8); }
+
+.sectionTitleSkel { height: 0.875rem; width: 35%; margin-bottom: 1.25rem; }
+
+.rowSkel {
+  @apply flex items-center gap-4 py-3.5 border-b border-slate-100 dark:border-slate-800 last:border-0;
+}
+
+.avatarSkel { width: 2.5rem; height: 2.5rem; border-radius: 50%; flex-shrink: 0; }
+.nameSkel   { height: 0.875rem; width: 45%; margin-bottom: 0.375rem; }
+.subSkel    { height: 0.75rem;  width: 65%; }
+
+/* Patient header */
+.headerSkel {
+  @apply rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mb-5;
+  background: rgba(255,255,255,0.9);
+}
+:global(.dark) .headerSkel { background: rgba(15,23,42,0.8); }
+
+.avatarLgSkel { width: 4rem; height: 4rem; border-radius: 1rem; flex-shrink: 0; }
+.nameLgSkel   { height: 1.5rem;  width: 50%; margin-bottom: 0.5rem; }
+.metaSkel     { height: 0.875rem; width: 70%; }
+.badgeSkel    { height: 1.5rem; width: 7rem; border-radius: 9999px; }
+
+/* Tab bar skeleton */
+.tabBarSkel {
+  @apply flex gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl mb-5;
+}
+.tabSkel { flex: 1; height: 2.5rem; border-radius: 0.75rem; }

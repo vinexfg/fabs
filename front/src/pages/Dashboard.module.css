@@ -44,6 +44,10 @@
   @apply text-xs text-slate-500 dark:text-slate-400 font-medium mt-1;
 }
 
+.statTrend { @apply text-[10px] font-semibold mt-0.5; }
+.trendUp   { @apply text-emerald-500 dark:text-emerald-400; }
+.trendDown { @apply text-red-400 dark:text-red-500; }
+
 /* Sections */
 .section {
   @apply rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mb-5;

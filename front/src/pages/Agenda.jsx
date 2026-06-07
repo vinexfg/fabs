@@ -57,6 +57,7 @@ export default function Agenda() {
   const [form, setForm]           = useState(EMPTY_FORM)
   const [filterStatus, setFilterStatus] = useState('')
   const [filterType, setFilterType]     = useState('')
+  const [mobileView, setMobileView]     = useState('list')
   const navigate = useNavigate()
   const toast    = useToast()
   const confirm  = useConfirm()
@@ -129,8 +130,19 @@ export default function Agenda() {
         <button className="btn-primary" onClick={() => openForm(selected)}>+ Nova Consulta</button>
       </div>
 
+      <div className={styles.mobileToggle}>
+        <button
+          onClick={() => setMobileView('list')}
+          className={mobileView === 'list' ? styles.mobileToggleActive : styles.mobileToggleBtn}
+        >📋 Lista</button>
+        <button
+          onClick={() => setMobileView('calendar')}
+          className={mobileView === 'calendar' ? styles.mobileToggleActive : styles.mobileToggleBtn}
+        >📅 Calendário</button>
+      </div>
+
       <div className={styles.layout}>
-        <div className={styles.calCard}>
+        <div className={`${styles.calCard} ${mobileView === 'list' ? styles.calCardMobileHidden : ''}`}>
           <div className={styles.calNav}>
             <button className="btn-secondary btn-sm" onClick={prevMonth}>‹</button>
             <h2 className={styles.calMonth}>{MONTHS[ref.getMonth()]} {ref.getFullYear()}</h2>

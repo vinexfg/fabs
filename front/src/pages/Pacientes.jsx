@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { PatientRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import PatientForm from '../components/patient/PatientForm'
-import { Empty } from './Dashboard'
+import { EmptyState } from '../components/EmptyState'
+import { SkeletonList } from '../components/Skeleton'
 import styles from './Pacientes.module.css'
 
 function calculateAge(dateOfBirth) {
@@ -23,14 +24,17 @@ export default function Pacientes() {
   const [convenioFilter, setConvenioFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const toast = useToast()
 
   useEffect(() => { load() }, [])
 
   async function load() {
+    setLoading(true)
     try { setPatients(await PatientRepository.findAll()) }
     catch { toast('Erro ao carregar', 'error') }
+    finally { setLoading(false) }
   }
 
   async function handleCreate(data) {
@@ -105,14 +109,24 @@ export default function Pacientes() {
         </div>
       )}
 
-      <div className={styles.list}>
-        {filtered.length === 0
-          ? <Empty icon="🔍" text={searchQuery || convenioFilter ? 'Nenhum resultado encontrado.' : 'Nenhum paciente cadastrado.'} />
-          : paginated.map(patient => (
-              <PatientCard key={patient.id} patient={patient} onClick={() => navigate(`/pacientes/${patient.id}`)} />
-            ))
-        }
-      </div>
+      {loading
+        ? <SkeletonList rows={6} />
+        : (
+          <div className={styles.list}>
+            {filtered.length === 0
+              ? <EmptyState
+                  type={searchQuery || convenioFilter ? 'search' : 'patients'}
+                  title={searchQuery || convenioFilter ? 'Nenhum resultado' : 'Nenhum paciente ainda'}
+                  description={searchQuery || convenioFilter ? 'Tente outros termos de busca.' : 'Cadastre o primeiro paciente para começar.'}
+                  action={!searchQuery && !convenioFilter ? { label: '+ Novo Paciente', onClick: () => setShowForm(true) } : undefined}
+                />
+              : paginated.map(patient => (
+                  <PatientCard key={patient.id} patient={patient} onClick={() => navigate(`/pacientes/${patient.id}`)} />
+                ))
+            }
+          </div>
+        )
+      }
 
       {totalPages > 1 && (
         <div className={styles.pagination}>

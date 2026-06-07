@@ -1,0 +1,26 @@
+.wrapper {
+  @apply flex flex-col items-center justify-center py-14 px-6 text-center;
+  color: #94a3b8;
+}
+
+:global(.dark) .wrapper {
+  color: #475569;
+}
+
+.illustration {
+  @apply mb-5;
+  width: 7rem;
+  height: 7rem;
+}
+
+.svg {
+  @apply w-full h-full;
+}
+
+.title {
+  @apply text-sm font-bold text-slate-500 dark:text-slate-500 mb-1.5;
+}
+
+.description {
+  @apply text-xs text-slate-400 dark:text-slate-600 max-w-[220px] leading-relaxed;
+}
