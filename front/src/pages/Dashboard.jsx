@@ -88,6 +88,8 @@ export default function Dashboard() {
   const trend = thisMonthCount - lastMonthCount
   const recent = [...patients].sort((a, b) => (b.criadoEm ?? '').localeCompare(a.criadoEm ?? '')).slice(0, 6)
 
+  const { birthdaysToday, birthdaysWeek } = getBirthdays(patients)
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -132,6 +134,52 @@ export default function Dashboard() {
               trendPositive
             />
           </div>
+
+          {(birthdaysToday.length > 0 || birthdaysWeek.length > 0) && (
+            <div className={styles.birthdaySection}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.reminderTitleRow}>
+                  <span>🎂</span>
+                  <h2 className={styles.sectionTitle}>Aniversariantes</h2>
+                  {birthdaysToday.length > 0 && (
+                    <span className={styles.birthdayBadge}>{birthdaysToday.length} hoje!</span>
+                  )}
+                </div>
+              </div>
+              <div className={styles.list}>
+                {[...birthdaysToday, ...birthdaysWeek].map(p => {
+                  const [, mm, dd] = (p.dataNascimento || '').split('-')
+                  const isToday = birthdaysToday.includes(p)
+                  const age = p.dataNascimento ? new Date().getFullYear() - parseInt(p.dataNascimento.split('-')[0]) : null
+                  const phone = (p.telefone || '').replace(/\D/g, '')
+                  const waMsg = phone ? encodeURIComponent(`Olá ${p.nome.split(' ')[0]}! 🎂 A equipe ${clinic.clinicName || 'DenteFácil'} deseja um feliz aniversário! Que seja um dia especial!`) : null
+                  return (
+                    <div key={p.id} className={styles.birthdayRow}>
+                      <div className={`${styles.birthdayIcon} ${isToday ? styles.birthdayIconToday : ''}`}>
+                        {isToday ? '🎂' : '🎁'}
+                      </div>
+                      <div className={styles.rowInfo} onClick={() => navigate(`/pacientes/${p.id}`)}>
+                        <p className={styles.rowName}>{p.nome}</p>
+                        <p className={styles.rowSub}>
+                          {dd}/{mm}{age ? ` · ${age} anos` : ''}
+                          {isToday ? ' · Hoje! 🎉' : ' · Esta semana'}
+                        </p>
+                      </div>
+                      {waMsg && phone && (
+                        <a
+                          href={`https://wa.me/55${phone}?text=${waMsg}`}
+                          target="_blank" rel="noreferrer"
+                          className={styles.waSend}
+                        >
+                          💬 Parabéns
+                        </a>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
@@ -268,6 +316,35 @@ export function PatientRow({ patient: p, onClick }) {
       <span className={styles.arrow}>→</span>
     </div>
   )
+}
+
+function getBirthdays(patients) {
+  const today = new Date()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  const todayMMDD = `${mm}-${dd}`
+
+  const birthdaysToday = []
+  const birthdaysWeek  = []
+
+  patients.forEach(p => {
+    if (!p.dataNascimento) return
+    const parts = p.dataNascimento.split('-')
+    if (parts.length < 3) return
+    const bMMDD = `${parts[1]}-${parts[2]}`
+    if (bMMDD === todayMMDD) { birthdaysToday.push(p); return }
+    const bThisYear = new Date(today.getFullYear(), parseInt(parts[1]) - 1, parseInt(parts[2]))
+    const diff = (bThisYear - today) / (1000 * 60 * 60 * 24)
+    if (diff > 0 && diff <= 7) birthdaysWeek.push(p)
+  })
+
+  birthdaysWeek.sort((a, b) => {
+    const [, am, ad] = a.dataNascimento.split('-')
+    const [, bm, bd] = b.dataNascimento.split('-')
+    return `${am}-${ad}`.localeCompare(`${bm}-${bd}`)
+  })
+
+  return { birthdaysToday, birthdaysWeek }
 }
 
 export function Empty({ icon, text }) {

@@ -84,6 +84,15 @@ export default function Agenda() {
 
   async function handleSave() {
     if (!form.patientId || !form.date || !form.time) { toast('Preencha os campos obrigatórios.', 'error'); return }
+
+    const dayList = await AppointmentRepository.findByDate(form.date).catch(() => [])
+    const conflicts = findConflicts(form, dayList)
+    if (conflicts.length > 0) {
+      const names = conflicts.map(a => `${a.time?.slice(0,5)} — ${a.patientNome}`).join('\n')
+      const ok = await confirm(`Conflito de horário detectado:\n\n${names}\n\nDeseja agendar mesmo assim?`)
+      if (!ok) return
+    }
+
     try {
       await AppointmentRepository.create(form)
       toast('Consulta agendada!', 'success')
@@ -298,6 +307,22 @@ export default function Agenda() {
       )}
     </div>
   )
+}
+
+function toMin(time) {
+  const [h, m] = (time || '00:00').split(':').map(Number)
+  return h * 60 + m
+}
+
+function findConflicts(newAppt, existing) {
+  const start = toMin(newAppt.time)
+  const end   = start + parseInt(newAppt.duration || 60)
+  return existing.filter(a => {
+    if (a.status === 'cancelado') return false
+    const aStart = toMin(a.time)
+    const aEnd   = aStart + parseInt(a.duration || 60)
+    return start < aEnd && end > aStart
+  })
 }
 
 function DayAppointment({ appt, onStatus, onDelete, onPatient }) {

@@ -191,6 +191,32 @@
          shrink-0 shadow-sm shadow-blue-500/30;
 }
 
+/* Birthday section */
+.birthdaySection {
+  @apply rounded-2xl border border-pink-200 dark:border-pink-500/30
+         bg-white dark:bg-slate-900 p-5 mb-5 shadow-sm;
+}
+
+.birthdayBadge {
+  @apply text-xs font-semibold px-2 py-0.5 rounded-full
+         bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-400;
+}
+
+.birthdayRow {
+  @apply flex items-center gap-4 p-3.5 rounded-xl
+         hover:bg-slate-50 dark:hover:bg-slate-800/60
+         transition-all duration-150 cursor-pointer;
+}
+
+.birthdayIcon {
+  @apply w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0
+         bg-pink-50 dark:bg-pink-500/10;
+}
+
+.birthdayIconToday {
+  @apply bg-pink-100 dark:bg-pink-500/20 ring-2 ring-pink-300 dark:ring-pink-500/40;
+}
+
 /* Empty state */
 .empty {
   @apply text-center py-12 text-slate-400 dark:text-slate-600;
