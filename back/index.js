@@ -24,6 +24,7 @@ app.use('/api/templates',    require('./src/interfaces/routes/templates'));
 app.use('/api/backup',       require('./src/interfaces/routes/backup'));
 app.use('/api/budgets',      require('./src/interfaces/routes/budgets'));
 app.use('/api/search',      require('./src/interfaces/routes/search'));
+app.use('/api/reports',     require('./src/interfaces/routes/reports'));
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, _next) => {

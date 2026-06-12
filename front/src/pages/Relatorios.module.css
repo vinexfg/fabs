@@ -283,6 +283,145 @@
   @apply w-8;
 }
 
+/* Procedimentos (aba Clínico) */
+.procHeader {
+  @apply flex items-center gap-3 px-5 py-2
+         text-xs font-bold text-slate-400 dark:text-slate-500
+         border-b border-slate-100 dark:border-slate-800;
+}
+
+.procHeaderName {
+  @apply flex-1;
+}
+
+.procHeaderNum {
+  @apply w-28 text-right hidden sm:block;
+}
+
+.procRow {
+  @apply flex items-center gap-3 px-5 py-3.5
+         border-b border-slate-100 dark:border-slate-800 last:border-0
+         hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors;
+}
+
+.procRank {
+  @apply w-5 text-xs font-bold text-slate-300 dark:text-slate-600 shrink-0 text-right;
+}
+
+.procNameCol {
+  @apply flex-1 min-w-0;
+}
+
+.procName {
+  @apply text-sm font-semibold text-slate-800 dark:text-slate-100 block truncate mb-1.5;
+}
+
+.procBarTrack {
+  @apply h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden;
+}
+
+.procBarFill {
+  @apply h-full bg-gradient-to-r from-teal-500 to-teal-400 rounded-full transition-all duration-500;
+}
+
+.procNum {
+  @apply w-28 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0 hidden sm:block;
+}
+
+.procTotal {
+  @apply text-emerald-600 dark:text-emerald-400;
+}
+
+/* Agenda (aba Agenda) */
+.agendaStatsGrid {
+  @apply grid grid-cols-2 sm:grid-cols-4 gap-4 mb-7;
+}
+
+.agendaChartBars {
+  @apply flex items-end gap-1.5 px-5 pt-4 pb-2 min-h-[160px];
+}
+
+.agendaBarCol {
+  @apply flex-1 flex flex-col items-center gap-1 min-w-0;
+}
+
+.agendaBarTotal {
+  @apply text-[10px] font-bold text-slate-500 dark:text-slate-400;
+}
+
+.agendaBarStack {
+  @apply w-full flex flex-col rounded-t-md overflow-hidden;
+}
+
+.agendaBarRealizados {
+  @apply bg-emerald-500;
+}
+
+.agendaBarFaltou {
+  @apply bg-red-400;
+}
+
+.agendaBarCancelados {
+  @apply bg-amber-400;
+}
+
+.agendaBarAgendados {
+  @apply bg-blue-400;
+}
+
+.agendaBarLabel {
+  @apply text-[9px] text-slate-400 font-medium truncate w-full text-center;
+}
+
+.agendaLegend {
+  @apply flex flex-wrap gap-4 px-5 py-3 border-t border-slate-100 dark:border-slate-800;
+}
+
+.agendaLegendItem {
+  @apply flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400;
+}
+
+.agendaLegendDot {
+  @apply w-2.5 h-2.5 rounded-full shrink-0;
+}
+
+.dotRealizados  { @apply bg-emerald-500; }
+.dotFaltou      { @apply bg-red-400; }
+.dotCancelados  { @apply bg-amber-400; }
+.dotAgendados   { @apply bg-blue-400; }
+
+.agendaTableHeader {
+  @apply flex items-center gap-2 px-5 py-2.5
+         text-xs font-bold text-slate-400 dark:text-slate-500
+         border-b border-slate-100 dark:border-slate-800;
+}
+
+.agendaTHMes {
+  @apply flex-1;
+}
+
+.agendaTHNum {
+  @apply w-20 text-right hidden sm:block;
+}
+
+.agendaTableRow {
+  @apply flex items-center gap-2 px-5 py-3
+         border-b border-slate-100 dark:border-slate-800 last:border-0
+         hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors;
+}
+
+.agendaTableMes {
+  @apply flex-1 text-sm font-semibold text-slate-800 dark:text-slate-100;
+}
+
+.agendaTableNum {
+  @apply w-20 text-right text-sm font-semibold hidden sm:block;
+}
+
+.agendaTablePct {
+  @apply text-xs font-normal text-slate-400 dark:text-slate-500;
+}
+
 /* Loading */
 .loading {
   @apply flex items-center justify-center h-64 text-slate-400 gap-3;

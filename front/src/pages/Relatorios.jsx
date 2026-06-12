@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
-import { PaymentRepository, SettingsRepository } from '../infrastructure/http'
+import { PaymentRepository, SettingsRepository, ReportRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { exportRelatorioCSV } from '../utils/exportCsv'
 import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
@@ -26,6 +26,7 @@ export default function Relatorios() {
   const [tab, setTab]                   = useState('receitas')
   const [payments, setPayments]         = useState([])
   const [inadimplentes, setInadimplentes] = useState([])
+  const [reports, setReports]           = useState(null)
   const [clinic, setClinic]             = useState({})
   const [loading, setLoading]           = useState(true)
   const [filterFrom, setFilterFrom]     = useState('')
@@ -40,14 +41,16 @@ export default function Relatorios() {
   async function load() {
     setLoading(true)
     try {
-      const [paymentList, inadimplentesList, clinicSettings] = await Promise.all([
+      const [paymentList, inadimplentesList, clinicSettings, reportData] = await Promise.all([
         PaymentRepository.findAll(),
         PaymentRepository.findInadimplentes(),
         SettingsRepository.find(),
+        ReportRepository.find(),
       ])
       setPayments(paymentList)
       setInadimplentes(inadimplentesList)
       setClinic(clinicSettings)
+      setReports(reportData)
     }
     catch { toast('Erro ao carregar relatórios', 'error') }
     finally { setLoading(false) }
@@ -126,8 +129,10 @@ export default function Relatorios() {
 
       <div className={styles.tabBar}>
         {[
-          { id: 'receitas', label: '💰 Receitas' },
+          { id: 'receitas',      label: '💰 Receitas' },
           { id: 'inadimplencia', label: `⚠️ Inadimplência${inadimplentes.length > 0 ? ` (${inadimplentes.length})` : ''}` },
+          { id: 'clinico',       label: '🦷 Clínico' },
+          { id: 'agenda',        label: '📅 Agenda' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} className={tab === t.id ? styles.tabActive : styles.tab}>
             {t.label}
@@ -137,6 +142,14 @@ export default function Relatorios() {
 
       {tab === 'inadimplencia' && (
         <InadimplenciaView rows={inadimplentes} total={totalInadimplencia} buildWaLink={buildWaLink} />
+      )}
+
+      {tab === 'clinico' && (
+        <ClinicView data={reports} />
+      )}
+
+      {tab === 'agenda' && (
+        <AgendaView data={reports} />
       )}
 
       <div style={{ display: 'none' }}>
@@ -276,6 +289,197 @@ export default function Relatorios() {
         </>
       )}
     </div>
+  )
+}
+
+function ClinicView({ data }) {
+  if (!data) return <p className={styles.chartEmpty}>Carregando...</p>
+
+  const procs = data.procedimentos || []
+  if (procs.length === 0) {
+    return (
+      <div className={styles.inadEmpty}>
+        <div className={styles.inadEmptyIcon}>🦷</div>
+        <p className={styles.inadEmptyTitle}>Nenhum tratamento registrado</p>
+        <p className={styles.inadEmptyText}>Os procedimentos aparecerão aqui conforme forem cadastrados.</p>
+      </div>
+    )
+  }
+
+  const totalCount  = procs.reduce((s, p) => s + Number(p.count), 0)
+  const totalRevenue = procs.reduce((s, p) => s + Number(p.total || 0), 0)
+  const ticketMedio = totalCount > 0 ? totalRevenue / totalCount : 0
+  const maxCount    = Math.max(...procs.map(p => Number(p.count)), 1)
+
+  return (
+    <>
+      <div className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} bg-teal-50 dark:bg-teal-500/10`}>🦷</div>
+          <div>
+            <p className={`${styles.statValue} text-teal-600 dark:text-teal-400`}>{totalCount}</p>
+            <p className={styles.statLabel}>Tratamentos registrados</p>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} bg-blue-50 dark:bg-blue-500/10`}>💰</div>
+          <div>
+            <p className={`${styles.statValue} text-blue-600 dark:text-blue-400`}>{fmtR(totalRevenue)}</p>
+            <p className={styles.statLabel}>Receita total de tratamentos</p>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} bg-violet-50 dark:bg-violet-500/10`}>🎯</div>
+          <div>
+            <p className={`${styles.statValue} text-violet-600 dark:text-violet-400`}>{fmtR(ticketMedio)}</p>
+            <p className={styles.statLabel}>Ticket médio</p>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.tableCard}>
+        <div className={styles.tableHeaderRow}>
+          <h2 className={styles.tableTitle}>Top Procedimentos</h2>
+        </div>
+        <div className={styles.procHeader}>
+          <span className={styles.procHeaderName}>Procedimento</span>
+          <span className={styles.procHeaderNum}>Qtd</span>
+          <span className={styles.procHeaderNum}>Ticket médio</span>
+          <span className={styles.procHeaderNum}>Total</span>
+        </div>
+        {procs.map((p, i) => {
+          const pct = Math.round((Number(p.count) / maxCount) * 100)
+          return (
+            <div key={p.proc} className={styles.procRow}>
+              <span className={styles.procRank}>{i + 1}</span>
+              <div className={styles.procNameCol}>
+                <span className={styles.procName}>{p.proc}</span>
+                <div className={styles.procBarTrack}>
+                  <div className={styles.procBarFill} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              <span className={styles.procNum}>{Number(p.count)}</span>
+              <span className={styles.procNum}>{fmtR(Number(p.avg || 0))}</span>
+              <span className={`${styles.procNum} ${styles.procTotal}`}>{fmtR(Number(p.total || 0))}</span>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+function AgendaView({ data }) {
+  if (!data) return <p className={styles.chartEmpty}>Carregando...</p>
+
+  const meses = (data.agendaPorMes || []).slice(-12)
+
+  if (meses.length === 0) {
+    return (
+      <div className={styles.inadEmpty}>
+        <div className={styles.inadEmptyIcon}>📅</div>
+        <p className={styles.inadEmptyTitle}>Nenhuma consulta registrada</p>
+        <p className={styles.inadEmptyText}>Os dados da agenda aparecerão aqui conforme as consultas forem registradas.</p>
+      </div>
+    )
+  }
+
+  const totalConsultas  = meses.reduce((s, m) => s + Number(m.total), 0)
+  const totalRealizados = meses.reduce((s, m) => s + Number(m.realizados), 0)
+  const totalFaltou     = meses.reduce((s, m) => s + Number(m.faltou), 0)
+  const totalCancelados = meses.reduce((s, m) => s + Number(m.cancelados), 0)
+  const taxaPresenca    = totalConsultas > 0 ? Math.round((totalRealizados / totalConsultas) * 100) : 0
+  const maxTotal        = Math.max(...meses.map(m => Number(m.total)), 1)
+
+  return (
+    <>
+      <div className={styles.agendaStatsGrid}>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} bg-blue-50 dark:bg-blue-500/10`}>📅</div>
+          <div>
+            <p className={`${styles.statValue} text-blue-600 dark:text-blue-400`}>{totalConsultas}</p>
+            <p className={styles.statLabel}>Total de consultas</p>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} bg-emerald-50 dark:bg-emerald-500/10`}>✅</div>
+          <div>
+            <p className={`${styles.statValue} text-emerald-600 dark:text-emerald-400`}>{taxaPresenca}%</p>
+            <p className={styles.statLabel}>Taxa de presença</p>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} bg-red-50 dark:bg-red-500/10`}>❌</div>
+          <div>
+            <p className={`${styles.statValue} text-red-600 dark:text-red-400`}>{totalFaltou}</p>
+            <p className={styles.statLabel}>Faltas</p>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} bg-amber-50 dark:bg-amber-500/10`}>🚫</div>
+          <div>
+            <p className={`${styles.statValue} text-amber-600 dark:text-amber-400`}>{totalCancelados}</p>
+            <p className={styles.statLabel}>Cancelamentos</p>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.tableCard} style={{ marginBottom: '1.25rem' }}>
+        <div className={styles.tableHeaderRow}>
+          <h2 className={styles.tableTitle}>Consultas por Mês (últimos 12 meses)</h2>
+        </div>
+        <div className={styles.agendaChartBars}>
+          {meses.map(m => (
+            <div key={m.mes} className={styles.agendaBarCol}>
+              <span className={styles.agendaBarTotal}>{Number(m.total)}</span>
+              <div className={styles.agendaBarStack} style={{ height: `${Math.max(6, (Number(m.total) / maxTotal) * 120)}px` }}>
+                {Number(m.realizados) > 0 && <div className={styles.agendaBarRealizados} style={{ flex: Number(m.realizados) }} />}
+                {Number(m.faltou)     > 0 && <div className={styles.agendaBarFaltou}     style={{ flex: Number(m.faltou) }} />}
+                {Number(m.cancelados) > 0 && <div className={styles.agendaBarCancelados} style={{ flex: Number(m.cancelados) }} />}
+                {Number(m.agendados)  > 0 && <div className={styles.agendaBarAgendados}  style={{ flex: Number(m.agendados) }} />}
+              </div>
+              <span className={styles.agendaBarLabel}>{fmtMonth(m.mes)}</span>
+            </div>
+          ))}
+        </div>
+        <div className={styles.agendaLegend}>
+          <span className={styles.agendaLegendItem}><span className={`${styles.agendaLegendDot} ${styles.dotRealizados}`} />Realizados</span>
+          <span className={styles.agendaLegendItem}><span className={`${styles.agendaLegendDot} ${styles.dotFaltou}`} />Faltou</span>
+          <span className={styles.agendaLegendItem}><span className={`${styles.agendaLegendDot} ${styles.dotCancelados}`} />Cancelados</span>
+          <span className={styles.agendaLegendItem}><span className={`${styles.agendaLegendDot} ${styles.dotAgendados}`} />Agendados</span>
+        </div>
+      </div>
+
+      <div className={styles.tableCard}>
+        <div className={styles.tableHeaderRow}>
+          <h2 className={styles.tableTitle}>Detalhamento por Mês</h2>
+        </div>
+        <div className={styles.agendaTableHeader}>
+          <span className={styles.agendaTHMes}>Mês</span>
+          <span className={styles.agendaTHNum}>Total</span>
+          <span className={styles.agendaTHNum}>Realizados</span>
+          <span className={styles.agendaTHNum}>Faltou</span>
+          <span className={styles.agendaTHNum}>Cancelados</span>
+          <span className={styles.agendaTHNum}>Agendados</span>
+        </div>
+        {[...meses].reverse().map(m => {
+          const total = Number(m.total)
+          const pres  = total > 0 ? Math.round((Number(m.realizados) / total) * 100) : 0
+          return (
+            <div key={m.mes} className={styles.agendaTableRow}>
+              <span className={styles.agendaTableMes}>{fmtMonth(m.mes)}</span>
+              <span className={styles.agendaTableNum}>{total}</span>
+              <span className={`${styles.agendaTableNum} text-emerald-600 dark:text-emerald-400`}>
+                {Number(m.realizados)} <span className={styles.agendaTablePct}>({pres}%)</span>
+              </span>
+              <span className={`${styles.agendaTableNum} text-red-500 dark:text-red-400`}>{Number(m.faltou)}</span>
+              <span className={`${styles.agendaTableNum} text-amber-500 dark:text-amber-400`}>{Number(m.cancelados)}</span>
+              <span className={`${styles.agendaTableNum} text-blue-500 dark:text-blue-400`}>{Number(m.agendados)}</span>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
