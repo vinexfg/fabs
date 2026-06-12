@@ -18,4 +18,14 @@ const updatePassword = (req, res) => {
   res.json({ ok: true });
 };
 
-module.exports = { show, update, updatePassword };
+const getNotes = (req, res) => {
+  const row = settingsRepository.findByKey('dashboard_notes');
+  res.json({ notes: row?.value ?? '' });
+};
+
+const updateNotes = (req, res) => {
+  settingsRepository.upsert('dashboard_notes', req.body.notes ?? '');
+  res.json({ ok: true });
+};
+
+module.exports = { show, update, updatePassword, getNotes, updateNotes };

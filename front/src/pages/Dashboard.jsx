@@ -27,6 +27,9 @@ export default function Dashboard() {
   const [showForm, setShowForm] = useState(false)
   const [sentReminders, setSentReminders] = useState(new Set())
   const [loading, setLoading] = useState(true)
+  const [notes, setNotes] = useState('')
+  const [notesSaveStatus, setNotesSaveStatus] = useState('idle')
+  const notesSaveTimer = React.useRef(null)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -36,16 +39,18 @@ export default function Dashboard() {
     setLoading(true)
     const today = new Date().toISOString().split('T')[0]
     try {
-      const [patientList, todayAppointments, tomorrowAppointments, clinicSettings] = await Promise.all([
+      const [patientList, todayAppointments, tomorrowAppointments, clinicSettings, notesData] = await Promise.all([
         PatientRepository.findAll(),
         AppointmentRepository.findByDate(today),
         AppointmentRepository.findTomorrow(),
         SettingsRepository.find(),
+        SettingsRepository.getNotes(),
       ])
       setPatients(patientList)
       setTodayAppts(todayAppointments)
       setTomorrowAppts(tomorrowAppointments)
       setClinic(clinicSettings)
+      setNotes(notesData.notes ?? '')
     } catch { toast('Erro ao carregar dados', 'error') }
     finally { setLoading(false) }
   }
@@ -68,6 +73,21 @@ export default function Dashboard() {
   function markSent(id) {
     setSentReminders(s => new Set([...s, id]))
     toast('Lembrete aberto no WhatsApp!', 'success')
+  }
+
+  function handleNotesChange(value) {
+    setNotes(value)
+    setNotesSaveStatus('saving')
+    clearTimeout(notesSaveTimer.current)
+    notesSaveTimer.current = setTimeout(async () => {
+      try {
+        await SettingsRepository.updateNotes(value)
+        setNotesSaveStatus('saved')
+        setTimeout(() => setNotesSaveStatus('idle'), 2000)
+      } catch {
+        setNotesSaveStatus('idle')
+      }
+    }, 1000)
   }
 
   async function handleCreate(data) {
@@ -132,6 +152,24 @@ export default function Dashboard() {
               bg="bg-emerald-50 dark:bg-emerald-500/10" text="text-emerald-600 dark:text-emerald-400"
               trend={tomorrowAppts.length > 0 ? `${tomorrowAppts.length} amanhã` : null}
               trendPositive
+            />
+          </div>
+
+          <div className={styles.notesSection}>
+            <div className={styles.notesSectionHeader}>
+              <span className={styles.notesIcon}>📝</span>
+              <h2 className={styles.sectionTitle}>Notas do Dia</h2>
+              <span className={styles.notesSaveStatus}>
+                {notesSaveStatus === 'saving' && 'Salvando...'}
+                {notesSaveStatus === 'saved' && '✓ Salvo'}
+              </span>
+            </div>
+            <textarea
+              className={styles.notesTextarea}
+              placeholder="Anotações rápidas, lembretes, observações do dia..."
+              value={notes}
+              onChange={e => handleNotesChange(e.target.value)}
+              rows={4}
             />
           </div>
 
