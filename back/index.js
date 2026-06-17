@@ -50,7 +50,6 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Rota não encontrada' });
 });
 
-// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, _next) => {
   console.error(err);
   const message = process.env.NODE_ENV === 'production'
