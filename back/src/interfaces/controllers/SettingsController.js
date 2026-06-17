@@ -12,6 +12,7 @@ const update = (req, res) => {
 
 const updatePassword = (req, res) => {
   if (!req.body.current || !req.body.next) return res.status(400).json({ error: 'Campos obrigatórios' });
+  if (req.body.next.length < 6) return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
   const row = settingsRepository.findByKey('password');
   if (!row || !verifyPw(req.body.current, row.value)) return res.status(401).json({ error: 'Senha atual incorreta' });
   settingsRepository.upsert('password', hashPw(req.body.next));
