@@ -89,12 +89,12 @@ export default function Agenda() {
 
   const loadDay = useCallback(async (date) => {
     try { setDayAppts(await AppointmentRepository.findByDate(date)) }
-    catch {}
+    catch { toast('Erro ao carregar agenda', 'error') }
   }, [])
 
   const loadWeek = useCallback(async (date) => {
     try { setWeekAppts(await AppointmentRepository.findByWeek(getWeekStart(date))) }
-    catch {}
+    catch { toast('Erro ao carregar agenda', 'error') }
   }, [])
 
   useEffect(() => { PatientRepository.findAll().then(setPatients).catch(() => {}) }, [])

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGlobalSearch } from '../context/GlobalSearchContext'
-import { http } from '../infrastructure/http/HttpClient'
+import { SearchRepository } from '../infrastructure/http/SearchRepository'
 import styles from './GlobalSearch.module.css'
 
 function fmtDate(d) {
@@ -44,7 +44,7 @@ export default function GlobalSearch() {
     }
     setSearching(true)
     debounceRef.current = setTimeout(() => {
-      http.get(`/search?q=${encodeURIComponent(q)}`)
+      SearchRepository.search(q)
         .then(data => { setResults(data); setFocused(0) })
         .catch(() => {})
         .finally(() => setSearching(false))
