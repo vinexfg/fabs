@@ -6,6 +6,19 @@ import path from 'path';
 import type { Request, Response, NextFunction } from 'express';
 import { initializeSchema } from './src/infrastructure/database/schema';
 import { authenticate } from './src/interfaces/middleware/AuthMiddleware';
+import authRoutes from './src/interfaces/routes/auth';
+import patientsRoutes from './src/interfaces/routes/patients';
+import treatmentsRoutes from './src/interfaces/routes/treatments';
+import paymentsRoutes from './src/interfaces/routes/payments';
+import evolutionsRoutes from './src/interfaces/routes/evolutions';
+import appointmentsRoutes from './src/interfaces/routes/appointments';
+import odontogramaRoutes from './src/interfaces/routes/odontograma';
+import settingsRoutes from './src/interfaces/routes/settings';
+import templatesRoutes from './src/interfaces/routes/templates';
+import backupRoutes from './src/interfaces/routes/backup';
+import budgetsRoutes from './src/interfaces/routes/budgets';
+import searchRoutes from './src/interfaces/routes/search';
+import reportsRoutes from './src/interfaces/routes/reports';
 
 initializeSchema();
 
@@ -32,21 +45,21 @@ app.use(helmet({
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 
-app.use('/api/auth', require('./src/interfaces/routes/auth').default);
+app.use('/api/auth', authRoutes);
 
 app.use('/api', authenticate);
-app.use('/api/patients',     require('./src/interfaces/routes/patients').default);
-app.use('/api/treatments',   require('./src/interfaces/routes/treatments').default);
-app.use('/api/payments',     require('./src/interfaces/routes/payments').default);
-app.use('/api/evolutions',   require('./src/interfaces/routes/evolutions').default);
-app.use('/api/appointments', require('./src/interfaces/routes/appointments').default);
-app.use('/api/odontograma',  require('./src/interfaces/routes/odontograma').default);
-app.use('/api/settings',     require('./src/interfaces/routes/settings').default);
-app.use('/api/templates',    require('./src/interfaces/routes/templates').default);
-app.use('/api/backup',       require('./src/interfaces/routes/backup').default);
-app.use('/api/budgets',      require('./src/interfaces/routes/budgets').default);
-app.use('/api/search',      require('./src/interfaces/routes/search').default);
-app.use('/api/reports',     require('./src/interfaces/routes/reports').default);
+app.use('/api/patients',     patientsRoutes);
+app.use('/api/treatments',   treatmentsRoutes);
+app.use('/api/payments',     paymentsRoutes);
+app.use('/api/evolutions',   evolutionsRoutes);
+app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/odontograma',  odontogramaRoutes);
+app.use('/api/settings',     settingsRoutes);
+app.use('/api/templates',    templatesRoutes);
+app.use('/api/backup',       backupRoutes);
+app.use('/api/budgets',      budgetsRoutes);
+app.use('/api/search',       searchRoutes);
+app.use('/api/reports',      reportsRoutes);
 
 app.use('/api', (req: Request, res: Response) => {
   res.status(404).json({ error: 'Rota não encontrada' });
