@@ -1,9 +1,11 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const { initializeSchema } = require('./src/infrastructure/database/schema');
-const { authenticate } = require('./src/interfaces/middleware/AuthMiddleware');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import path from 'path';
+import type { Request, Response, NextFunction } from 'express';
+import { initializeSchema } from './src/infrastructure/database/schema';
+import { authenticate } from './src/interfaces/middleware/AuthMiddleware';
 
 initializeSchema();
 
@@ -30,27 +32,27 @@ app.use(helmet({
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 
-app.use('/api/auth', require('./src/interfaces/routes/auth'));
+app.use('/api/auth', require('./src/interfaces/routes/auth').default);
 
 app.use('/api', authenticate);
-app.use('/api/patients',     require('./src/interfaces/routes/patients'));
-app.use('/api/treatments',   require('./src/interfaces/routes/treatments'));
-app.use('/api/payments',     require('./src/interfaces/routes/payments'));
-app.use('/api/evolutions',   require('./src/interfaces/routes/evolutions'));
-app.use('/api/appointments', require('./src/interfaces/routes/appointments'));
-app.use('/api/odontograma',  require('./src/interfaces/routes/odontograma'));
-app.use('/api/settings',     require('./src/interfaces/routes/settings'));
-app.use('/api/templates',    require('./src/interfaces/routes/templates'));
-app.use('/api/backup',       require('./src/interfaces/routes/backup'));
-app.use('/api/budgets',      require('./src/interfaces/routes/budgets'));
-app.use('/api/search',      require('./src/interfaces/routes/search'));
-app.use('/api/reports',     require('./src/interfaces/routes/reports'));
+app.use('/api/patients',     require('./src/interfaces/routes/patients').default);
+app.use('/api/treatments',   require('./src/interfaces/routes/treatments').default);
+app.use('/api/payments',     require('./src/interfaces/routes/payments').default);
+app.use('/api/evolutions',   require('./src/interfaces/routes/evolutions').default);
+app.use('/api/appointments', require('./src/interfaces/routes/appointments').default);
+app.use('/api/odontograma',  require('./src/interfaces/routes/odontograma').default);
+app.use('/api/settings',     require('./src/interfaces/routes/settings').default);
+app.use('/api/templates',    require('./src/interfaces/routes/templates').default);
+app.use('/api/backup',       require('./src/interfaces/routes/backup').default);
+app.use('/api/budgets',      require('./src/interfaces/routes/budgets').default);
+app.use('/api/search',      require('./src/interfaces/routes/search').default);
+app.use('/api/reports',     require('./src/interfaces/routes/reports').default);
 
-app.use('/api', (req, res) => {
+app.use('/api', (req: Request, res: Response) => {
   res.status(404).json({ error: 'Rota não encontrada' });
 });
 
-app.use((err, req, res, _next) => {
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   const message = process.env.NODE_ENV === 'production'
     ? 'Erro interno do servidor'
@@ -59,7 +61,6 @@ app.use((err, req, res, _next) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
   const distPath = path.join(__dirname, '..', 'front', 'dist');
   app.use(express.static(distPath));
   app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
