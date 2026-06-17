@@ -15,9 +15,18 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-// CSP desativado: o front usa script inline (anti-FOUC do dark mode) e fontes do
-// Google Fonts que exigiriam uma política customizada para não quebrar a SPA.
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      // O React usa props style={{...}} (atributos inline) em várias telas/impressões.
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      // Fotos de pacientes são salvas como base64 e exibidas via <img src="data:...">.
+      imgSrc: ["'self'", 'data:'],
+    },
+  },
+}));
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 
@@ -56,6 +65,16 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(distPath));
   app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 }
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+  process.exit(1);
+});
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server rodando na porta ${PORT}`));
