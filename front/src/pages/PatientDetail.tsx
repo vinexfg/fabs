@@ -248,7 +248,7 @@ function DocModal({ type, patient, clinic, receitaRef, atestadoRef, printReceita
   const [reason, setReason] = useState('')
 
   function handlePrint() {
-    isReceita ? printReceita() : printAtestado()
+    if (isReceita) printReceita(); else printAtestado()
     onClose()
   }
 
