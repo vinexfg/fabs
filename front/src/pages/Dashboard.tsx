@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PatientRepository, AppointmentRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
@@ -6,30 +6,33 @@ import PatientForm from '../components/patient/PatientForm'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonStatCards, SkeletonList } from '../components/Skeleton'
 import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
+import type { Patient, Appointment, ClinicSettings } from '../types/entities'
 import styles from './Dashboard.module.css'
 
-const STATUS_BADGE = {
+const STATUS_BADGE: Record<string, string> = {
   agendado:  styles.statusAgendado,
   realizado: styles.statusRealizado,
   cancelado: styles.statusCancelado,
   faltou:    styles.statusFaltou,
 }
 
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<string, string> = {
   agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou',
 }
 
+type NotesSaveStatus = 'idle' | 'saving' | 'saved'
+
 export default function Dashboard() {
-  const [patients, setPatients] = useState([])
-  const [todayAppts, setTodayAppts] = useState([])
-  const [tomorrowAppts, setTomorrowAppts] = useState([])
-  const [clinic, setClinic] = useState({})
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [todayAppts, setTodayAppts] = useState<Appointment[]>([])
+  const [tomorrowAppts, setTomorrowAppts] = useState<Appointment[]>([])
+  const [clinic, setClinic] = useState<Partial<ClinicSettings>>({})
   const [showForm, setShowForm] = useState(false)
-  const [sentReminders, setSentReminders] = useState(new Set())
+  const [sentReminders, setSentReminders] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [notes, setNotes] = useState('')
-  const [notesSaveStatus, setNotesSaveStatus] = useState('idle')
-  const notesSaveTimer = React.useRef(null)
+  const [notesSaveStatus, setNotesSaveStatus] = useState<NotesSaveStatus>('idle')
+  const notesSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -55,14 +58,14 @@ export default function Dashboard() {
     finally { setLoading(false) }
   }
 
-  function buildWaLink(appt) {
+  function buildWaLink(appt: Appointment): string | null {
     const phone = (appt.patientTelefone || '').replace(/\D/g, '')
     if (!phone) return null
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
     const dateStr = tomorrow.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
     const msg = encodeURIComponent(
-      `Olá ${appt.patientNome.split(' ')[0]}! 👋\n` +
+      `Olá ${(appt.patientNome || '').split(' ')[0]}! 👋\n` +
       `Lembrando que você tem consulta *amanhã, ${dateStr}*, às *${appt.time?.slice(0,5)}h*` +
       `${clinic.clinicName ? ` no *${clinic.clinicName}*` : ''}.\n` +
       `Em caso de dúvidas, estamos à disposição. Até amanhã! 😊`
@@ -70,12 +73,12 @@ export default function Dashboard() {
     return `https://wa.me/55${phone}?text=${msg}`
   }
 
-  function markSent(id) {
+  function markSent(id: string) {
     setSentReminders(s => new Set([...s, id]))
     toast('Lembrete aberto no WhatsApp!', 'success')
   }
 
-  function handleNotesChange(value) {
+  function handleNotesChange(value: string) {
     setNotes(value)
     setNotesSaveStatus('saving')
     clearTimeout(notesSaveTimer.current)
@@ -90,7 +93,7 @@ export default function Dashboard() {
     }, 1000)
   }
 
-  async function handleCreate(data) {
+  async function handleCreate(data: Parameters<typeof PatientRepository.create>[0]) {
     try {
       const newPatient = await PatientRepository.create(data)
       toast('Paciente cadastrado!', 'success', {
@@ -98,7 +101,7 @@ export default function Dashboard() {
       })
       setShowForm(false)
       navigate(`/pacientes/${newPatient.id}`)
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
   const thisMonth = new Date().toISOString().slice(0, 7)
@@ -262,7 +265,7 @@ export default function Dashboard() {
                   onClick={() => {
                     const withLink = tomorrowAppts.filter(a => buildWaLink(a))
                     if (withLink.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
-                    openWhatsAppSequential(withLink.map(a => buildWaLink(a)), () => {})
+                    openWhatsAppSequential(withLink.map(a => buildWaLink(a) as string), () => {})
                     setSentReminders(new Set(tomorrowAppts.map(a => a.id)))
                     toast(`${withLink.length} lembrete${withLink.length !== 1 ? 's' : ''} sendo aberto${withLink.length !== 1 ? 's' : ''}...`, 'success')
                   }}
@@ -322,7 +325,17 @@ export default function Dashboard() {
   )
 }
 
-function StatCard({ label, value, icon, bg, text, trend, trendPositive }) {
+interface StatCardProps {
+  label: string
+  value: number
+  icon: string
+  bg: string
+  text: string
+  trend?: string | null
+  trendPositive?: boolean
+}
+
+function StatCard({ label, value, icon, bg, text, trend, trendPositive }: StatCardProps) {
   return (
     <div className={styles.statCard}>
       <div className={`${styles.statIcon} ${bg}`}>{icon}</div>
@@ -339,7 +352,7 @@ function StatCard({ label, value, icon, bg, text, trend, trendPositive }) {
   )
 }
 
-export function PatientRow({ patient: p, onClick }) {
+export function PatientRow({ patient: p, onClick }: { patient: Patient; onClick: () => void }) {
   const initials = p.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
   return (
     <div className={`group ${styles.row}`} onClick={onClick}>
@@ -356,14 +369,14 @@ export function PatientRow({ patient: p, onClick }) {
   )
 }
 
-function getBirthdays(patients) {
+function getBirthdays(patients: Patient[]) {
   const today = new Date()
   const mm = String(today.getMonth() + 1).padStart(2, '0')
   const dd = String(today.getDate()).padStart(2, '0')
   const todayMMDD = `${mm}-${dd}`
 
-  const birthdaysToday = []
-  const birthdaysWeek  = []
+  const birthdaysToday: Patient[] = []
+  const birthdaysWeek: Patient[] = []
 
   patients.forEach(p => {
     if (!p.dataNascimento) return
@@ -372,20 +385,20 @@ function getBirthdays(patients) {
     const bMMDD = `${parts[1]}-${parts[2]}`
     if (bMMDD === todayMMDD) { birthdaysToday.push(p); return }
     const bThisYear = new Date(today.getFullYear(), parseInt(parts[1]) - 1, parseInt(parts[2]))
-    const diff = (bThisYear - today) / (1000 * 60 * 60 * 24)
+    const diff = (bThisYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
     if (diff > 0 && diff <= 7) birthdaysWeek.push(p)
   })
 
   birthdaysWeek.sort((a, b) => {
-    const [, am, ad] = a.dataNascimento.split('-')
-    const [, bm, bd] = b.dataNascimento.split('-')
+    const [, am, ad] = (a.dataNascimento as string).split('-')
+    const [, bm, bd] = (b.dataNascimento as string).split('-')
     return `${am}-${ad}`.localeCompare(`${bm}-${bd}`)
   })
 
   return { birthdaysToday, birthdaysWeek }
 }
 
-export function Empty({ icon, text }) {
+export function Empty({ icon, text }: { icon: string; text: string }) {
   return (
     <div className={styles.empty}>
       <div className={styles.emptyIcon}>{icon}</div>

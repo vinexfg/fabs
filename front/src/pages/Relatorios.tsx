@@ -6,33 +6,37 @@ import { useToast } from '../context/ToastContext'
 import { exportRelatorioCSV } from '../utils/exportCsv'
 import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
 import RelatoriosPrint from '../components/print/RelatoriosPrint'
+import type { Payment, Inadimplente, ClinicSettings } from '../types/entities'
+import type { ReportStats, AgendaPorMes } from '../infrastructure/http/ReportRepository'
 import styles from './Relatorios.module.css'
 
-const FORMAS = {
+const FORMAS: Record<string, string> = {
   pix: 'PIX', dinheiro: 'Dinheiro',
   cartao_credito: 'Cartão Crédito', cartao_debito: 'Cartão Débito',
   convenio: 'Convênio', cheque: 'Cheque',
 }
 
-function fmtR(v) {
+function fmtR(v: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0)
 }
-function fmtMonth(ym) {
+function fmtMonth(ym: string) {
   const [y, m] = ym.split('-')
   return new Date(+y, +m - 1, 1).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
 }
 
+type Tab = 'receitas' | 'inadimplencia' | 'clinico' | 'agenda'
+
 export default function Relatorios() {
-  const [tab, setTab]                   = useState('receitas')
-  const [payments, setPayments]         = useState([])
-  const [inadimplentes, setInadimplentes] = useState([])
-  const [reports, setReports]           = useState(null)
-  const [clinic, setClinic]             = useState({})
+  const [tab, setTab]                   = useState<Tab>('receitas')
+  const [payments, setPayments]         = useState<Payment[]>([])
+  const [inadimplentes, setInadimplentes] = useState<Inadimplente[]>([])
+  const [reports, setReports]           = useState<ReportStats | null>(null)
+  const [clinic, setClinic]             = useState<Partial<ClinicSettings>>({})
   const [loading, setLoading]           = useState(true)
   const [filterFrom, setFilterFrom]     = useState('')
   const [filterTo, setFilterTo]         = useState('')
   const toast    = useToast()
-  const printRef = useRef(null)
+  const printRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = useReactToPrint({ contentRef: printRef })
 
@@ -56,7 +60,7 @@ export default function Relatorios() {
     finally { setLoading(false) }
   }
 
-  function buildWaLink(row) {
+  function buildWaLink(row: Inadimplente): string | null {
     const phone = (row.telefone || '').replace(/\D/g, '')
     if (!phone) return null
     const msg = encodeURIComponent(
@@ -82,25 +86,25 @@ export default function Relatorios() {
     return true
   })
 
-  const total    = filtered.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const total    = filtered.reduce((s, p) => s + (Number(p.valor) || 0), 0)
   const thisMonth = new Date().toISOString().slice(0, 7)
-  const totalMes = filtered.filter(p => (p.data || '').startsWith(thisMonth)).reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const totalMes = filtered.filter(p => (p.data || '').startsWith(thisMonth)).reduce((s, p) => s + (Number(p.valor) || 0), 0)
 
-  const byMonth = {}
+  const byMonth: Record<string, number> = {}
   filtered.forEach(p => {
     const m = (p.data || '').slice(0, 7)
     if (!m) return
-    byMonth[m] = (byMonth[m] || 0) + (parseFloat(p.valor) || 0)
+    byMonth[m] = (byMonth[m] || 0) + (Number(p.valor) || 0)
   })
-  const months = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).slice(-12)
+  const months = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).slice(-12) as [string, number][]
   const maxVal = Math.max(...months.map(([, v]) => v), 1)
 
-  const byForma = {}
+  const byForma: Record<string, number> = {}
   filtered.forEach(p => {
     const f = p.forma || 'outro'
-    byForma[f] = (byForma[f] || 0) + (parseFloat(p.valor) || 0)
+    byForma[f] = (byForma[f] || 0) + (Number(p.valor) || 0)
   })
-  const formaEntries = Object.entries(byForma).sort(([, a], [, b]) => b - a)
+  const formaEntries = Object.entries(byForma).sort(([, a], [, b]) => b - a) as [string, number][]
 
   const recent = [...filtered].sort((a, b) => (b.data || '').localeCompare(a.data || '')).slice(0, 20)
   const totalInadimplencia = inadimplentes.reduce((s, r) => s + r.emAberto, 0)
@@ -134,7 +138,7 @@ export default function Relatorios() {
           { id: 'clinico',       label: '🦷 Clínico' },
           { id: 'agenda',        label: '📅 Agenda' },
         ].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={tab === t.id ? styles.tabActive : styles.tab}>
+          <button key={t.id} onClick={() => setTab(t.id as Tab)} className={tab === t.id ? styles.tabActive : styles.tab}>
             {t.label}
           </button>
         ))}
@@ -278,10 +282,10 @@ export default function Relatorios() {
                       <p className={styles.tableRowName}>{p.descricao}</p>
                       <p className={styles.tableRowMeta}>
                         {p.patientNome && <span className={styles.tableRowPatient}>{p.patientNome} · </span>}
-                        {(p.data || '').split('-').reverse().join('/')} · {FORMAS[p.forma] || p.forma}
+                        {(p.data || '').split('-').reverse().join('/')} · {FORMAS[p.forma || ''] || p.forma}
                       </p>
                     </div>
-                    <span className={styles.tableRowValue}>{fmtR(parseFloat(p.valor))}</span>
+                    <span className={styles.tableRowValue}>{fmtR(Number(p.valor))}</span>
                   </div>
                 ))
             }
@@ -292,7 +296,7 @@ export default function Relatorios() {
   )
 }
 
-function ClinicView({ data }) {
+function ClinicView({ data }: { data: ReportStats | null }) {
   if (!data) return <p className={styles.chartEmpty}>Carregando...</p>
 
   const procs = data.procedimentos || []
@@ -369,10 +373,10 @@ function ClinicView({ data }) {
   )
 }
 
-function AgendaView({ data }) {
+function AgendaView({ data }: { data: ReportStats | null }) {
   if (!data) return <p className={styles.chartEmpty}>Carregando...</p>
 
-  const meses = (data.agendaPorMes || []).slice(-12)
+  const meses: AgendaPorMes[] = (data.agendaPorMes || []).slice(-12)
 
   if (meses.length === 0) {
     return (
@@ -483,7 +487,13 @@ function AgendaView({ data }) {
   )
 }
 
-function InadimplenciaView({ rows, total, buildWaLink }) {
+interface InadimplenciaViewProps {
+  rows: Inadimplente[]
+  total: number
+  buildWaLink: (row: Inadimplente) => string | null
+}
+
+function InadimplenciaView({ rows, total, buildWaLink }: InadimplenciaViewProps) {
   const navigate = useNavigate()
 
   if (rows.length === 0) {
@@ -522,7 +532,7 @@ function InadimplenciaView({ rows, total, buildWaLink }) {
             className={styles.inadCobrAll}
             onClick={() => {
               const withLink = rows.filter(r => buildWaLink(r))
-              if (withLink.length > 0) openWhatsAppSequential(withLink.map(r => buildWaLink(r)))
+              if (withLink.length > 0) openWhatsAppSequential(withLink.map(r => buildWaLink(r) as string))
             }}
           >
             💬 Cobrar todos por WhatsApp

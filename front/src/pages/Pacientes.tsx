@@ -1,13 +1,14 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PatientRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import PatientForm from '../components/patient/PatientForm'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonList } from '../components/Skeleton'
+import type { Patient } from '../types/entities'
 import styles from './Pacientes.module.css'
 
-function calculateAge(dateOfBirth) {
+function calculateAge(dateOfBirth: string) {
   const today = new Date()
   const birthDate = new Date(dateOfBirth)
   let age = today.getFullYear() - birthDate.getFullYear()
@@ -19,9 +20,9 @@ function calculateAge(dateOfBirth) {
 const PAGE_SIZE = 15
 
 export default function Pacientes() {
-  const [patients, setPatients]     = useState([])
+  const [patients, setPatients]     = useState<Patient[]>([])
   const [total, setTotal]           = useState(0)
-  const [allConvenios, setAllConvenios] = useState([])
+  const [allConvenios, setAllConvenios] = useState<string[]>([])
   const [searchQuery, setSearchQuery]   = useState('')
   const [convenioFilter, setConvenioFilter] = useState('')
   const [showForm, setShowForm]     = useState(false)
@@ -29,9 +30,9 @@ export default function Pacientes() {
   const [loading, setLoading]       = useState(true)
   const navigate = useNavigate()
   const toast    = useToast()
-  const debounceRef = useRef(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  const load = useCallback(async (q, conv, pg) => {
+  const load = useCallback(async (q: string, conv: string, pg: number) => {
     setLoading(true)
     try {
       const search = [q, conv && conv !== 'Todos' ? conv : ''].filter(Boolean).join(' ')
@@ -46,40 +47,40 @@ export default function Pacientes() {
   useEffect(() => {
     PatientRepository.findAll()
       .then(all => {
-        const convs = [...new Set(all.map(p => p.convenio || 'Particular').filter(Boolean))].sort()
+        const convs = [...new Set(all.map(p => p.convenio || 'Particular').filter(Boolean))].sort() as string[]
         setAllConvenios(convs)
       })
       .catch(() => {})
   }, [])
 
-  useEffect(() => { load(searchQuery, convenioFilter, page) }, [])
+  useEffect(() => { load(searchQuery, convenioFilter, page) }, [load, searchQuery, convenioFilter, page])
 
-  function handleSearchChange(v) {
+  function handleSearchChange(v: string) {
     setSearchQuery(v)
     setPage(1)
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => load(v, convenioFilter, 1), 350)
   }
 
-  function handleConvenioChange(c) {
+  function handleConvenioChange(c: string) {
     const conv = c === 'Todos' ? '' : c
     setConvenioFilter(conv)
     setPage(1)
     load(searchQuery, conv, 1)
   }
 
-  function handlePage(newPage) {
+  function handlePage(newPage: number) {
     setPage(newPage)
     load(searchQuery, convenioFilter, newPage)
   }
 
-  async function handleCreate(data) {
+  async function handleCreate(data: Parameters<typeof PatientRepository.create>[0]) {
     try {
       const newPatient = await PatientRepository.create(data)
       toast('Paciente cadastrado!', 'success')
       setShowForm(false)
       navigate(`/pacientes/${newPatient.id}`)
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -165,7 +166,7 @@ export default function Pacientes() {
   )
 }
 
-function PatientCard({ patient, onClick }) {
+function PatientCard({ patient, onClick }: { patient: Patient; onClick: () => void }) {
   const initials = patient.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
   const age = patient.dataNascimento ? calculateAge(patient.dataNascimento) : null
 

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { RefObject } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { PatientRepository, TreatmentRepository, PaymentRepository, EvolutionRepository, SettingsRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
@@ -17,6 +18,7 @@ import ReceitaPrint from '../components/patient/print/ReceitaPrint'
 import AtestadoPrint from '../components/patient/print/AtestadoPrint'
 import { usePrint } from '../components/patient/print/usePrint'
 import OrcamentoTab from '../components/patient/OrcamentoTab'
+import type { Patient, Treatment, Payment, Evolution, ClinicSettings } from '../types/entities'
 import styles from './PatientDetail.module.css'
 
 const TABS = [
@@ -28,11 +30,11 @@ const TABS = [
   { id: 'orcamento',   label: 'Orçamento',   icon: '📋' },
 ]
 
-function formatCurrency(value) {
+function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
 }
 
-function calculateAge(dateOfBirth) {
+function calculateAge(dateOfBirth: string) {
   const today = new Date()
   const birthDate = new Date(dateOfBirth)
   let age = today.getFullYear() - birthDate.getFullYear()
@@ -42,25 +44,26 @@ function calculateAge(dateOfBirth) {
 }
 
 export default function PatientDetail() {
-  const { id } = useParams()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const toast    = useToast()
   const confirm  = useConfirm()
   const { patientFileRef, receitaRef, atestadoRef, printPatientFile, printReceita, printAtestado } = usePrint()
 
-  const [patient, setPatient]     = useState(null)
-  const [treatments, setTreatments] = useState([])
-  const [payments, setPayments]   = useState([])
-  const [evolutions, setEvolutions] = useState([])
+  const [patient, setPatient]     = useState<Patient | null>(null)
+  const [treatments, setTreatments] = useState<Treatment[]>([])
+  const [payments, setPayments]   = useState<Payment[]>([])
+  const [evolutions, setEvolutions] = useState<Evolution[]>([])
   const [activeTab, setActiveTab] = useState('ficha')
   const [editing, setEditing]     = useState(false)
   const [loading, setLoading]     = useState(true)
-  const [docModal, setDocModal]   = useState(null)
-  const [clinic, setClinic]       = useState({})
+  const [docModal, setDocModal]   = useState<'receita' | 'atestado' | null>(null)
+  const [clinic, setClinic]       = useState<Partial<ClinicSettings>>({})
 
   useEffect(() => { loadAll() }, [id])
 
   async function loadAll() {
+    if (!id) return
     setLoading(true)
     try {
       const [patientData, treatmentList, paymentList, evolutionList, clinicSettings] = await Promise.all([
@@ -83,23 +86,25 @@ export default function PatientDetail() {
     }
   }
 
-  async function handleEdit(data) {
+  async function handleEdit(data: Parameters<typeof PatientRepository.update>[1]) {
+    if (!id) return
     try {
       const updated = await PatientRepository.update(id, data)
       setPatient(updated)
       toast('Dados atualizados!', 'success')
       setEditing(false)
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
   async function handleDelete() {
+    if (!id || !patient) return
     const confirmed = await confirm(`Excluir "${patient.nome}"?\n\nTodos os dados serão removidos permanentemente.`)
     if (!confirmed) return
     try {
       await PatientRepository.remove(id)
       toast('Paciente excluído.')
       navigate('/pacientes')
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
   if (loading) return (
@@ -108,11 +113,11 @@ export default function PatientDetail() {
       <SkeletonPatientHeader />
     </div>
   )
-  if (!patient) return null
+  if (!patient || !id) return null
 
   const initials       = patient.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-  const totalTreatments = treatments.reduce((s, t) => s + (parseFloat(t.valor) || 0), 0)
-  const totalPaid      = payments.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0)
+  const totalTreatments = treatments.reduce((s, t) => s + (Number(t.valor) || 0), 0)
+  const totalPaid      = payments.reduce((s, p) => s + (Number(p.valor) || 0), 0)
   const amountOwed     = Math.max(0, totalTreatments - totalPaid)
   const completedTreatments = treatments.filter(t => t.status === 'concluido').length
   const whatsappPhone  = patient.telefone ? `55${patient.telefone.replace(/\D/g, '')}` : null
@@ -224,7 +229,18 @@ export default function PatientDetail() {
   )
 }
 
-function DocModal({ type, patient, clinic, receitaRef, atestadoRef, printReceita, printAtestado, onClose }) {
+interface DocModalProps {
+  type: 'receita' | 'atestado'
+  patient: Patient
+  clinic: Partial<ClinicSettings>
+  receitaRef: RefObject<HTMLDivElement>
+  atestadoRef: RefObject<HTMLDivElement>
+  printReceita: () => void
+  printAtestado: () => void
+  onClose: () => void
+}
+
+function DocModal({ type, patient, clinic, receitaRef, atestadoRef, printReceita, printAtestado, onClose }: DocModalProps) {
   const isReceita = type === 'receita'
   const [medicines, setMedicines] = useState('')
   const [instructions, setInstructions] = useState('')

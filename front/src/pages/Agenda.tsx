@@ -1,52 +1,53 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppointmentRepository, PatientRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 import Modal from '../components/Modal'
+import type { Appointment, Patient } from '../types/entities'
 import styles from './Agenda.module.css'
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DAYS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 const TYPES  = ['Consulta','Limpeza/Profilaxia','Extração','Tratamento de Canal','Implante','Restauração','Prótese','Ortodontia','Avaliação','Retorno']
 
-const STATUS_LABELS = { agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou' }
+const STATUS_LABELS: Record<string, string> = { agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou' }
 
-const STATUS_CHIP = {
+const STATUS_CHIP: Record<string, string> = {
   agendado:  styles.calChipAgendado,
   realizado: styles.calChipRealizado,
   cancelado: styles.calChipCancelado,
   faltou:    styles.calChipFaltou,
 }
 
-const STATUS_DOT_COLOR = {
+const STATUS_DOT_COLOR: Record<string, string> = {
   agendado:  'bg-blue-500',
   realizado: 'bg-emerald-500',
   cancelado: 'bg-red-400',
   faltou:    'bg-amber-400',
 }
 
-const STATUS_BTN_ACTIVE = {
+const STATUS_BTN_ACTIVE: Record<string, string> = {
   agendado:  styles.statusAgendado,
   realizado: styles.statusRealizado,
   cancelado: styles.statusCancelado,
   faltou:    styles.statusFaltou,
 }
 
-function toISO(d) { return d.toISOString().split('T')[0] }
+function toISO(d: Date) { return d.toISOString().split('T')[0] }
 function today() { return toISO(new Date()) }
-function fmtMonthKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` }
+function fmtMonthKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` }
 
-function getCalendarDays(year, month) {
+function getCalendarDays(year: number, month: number) {
   const first = new Date(year, month, 1)
   const last  = new Date(year, month+1, 0)
-  const days  = Array(first.getDay()).fill(null)
+  const days: (Date | null)[]  = Array(first.getDay()).fill(null)
   for (let d = 1; d <= last.getDate(); d++) days.push(new Date(year, month, d))
   return days
 }
 
 // Returns Monday of the week that contains `dateStr`
-function getWeekStart(dateStr) {
+function getWeekStart(dateStr: string) {
   const d = new Date(dateStr + 'T12:00:00')
   const day = d.getDay() // 0=Sun
   const diff = (day === 0 ? -6 : 1 - day)
@@ -54,7 +55,7 @@ function getWeekStart(dateStr) {
   return toISO(d)
 }
 
-function getWeekDays(weekStartISO) {
+function getWeekDays(weekStartISO: string) {
   const start = new Date(weekStartISO + 'T12:00:00')
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start)
@@ -63,46 +64,56 @@ function getWeekDays(weekStartISO) {
   })
 }
 
-const EMPTY_FORM = { patientId: '', date: today(), time: '09:00', duration: 60, type: 'Consulta', notes: '' }
+interface AppointmentForm {
+  patientId: string
+  date: string
+  time: string
+  duration: number | string
+  type: string
+  notes: string
+}
+
+const EMPTY_FORM: AppointmentForm = { patientId: '', date: today(), time: '09:00', duration: 60, type: 'Consulta', notes: '' }
 
 export default function Agenda() {
   const [ref, setRef]             = useState(new Date())
   const [selected, setSelected]   = useState(today())
-  const [monthAppts, setMonthAppts] = useState([])
-  const [dayAppts, setDayAppts]   = useState([])
-  const [weekAppts, setWeekAppts] = useState([])
-  const [patients, setPatients]   = useState([])
+  const [monthAppts, setMonthAppts] = useState<Appointment[]>([])
+  const [dayAppts, setDayAppts]   = useState<Appointment[]>([])
+  const [weekAppts, setWeekAppts] = useState<Appointment[]>([])
+  const [patients, setPatients]   = useState<Patient[]>([])
   const [showForm, setShowForm]   = useState(false)
-  const [form, setForm]           = useState(EMPTY_FORM)
+  const [form, setForm]           = useState<AppointmentForm>(EMPTY_FORM)
   const [filterStatus, setFilterStatus] = useState('')
   const [filterType, setFilterType]     = useState('')
-  const [mobileView, setMobileView]     = useState('list')
-  const [calView, setCalView]           = useState('month')
+  const [mobileView, setMobileView]     = useState<'list' | 'calendar'>('list')
+  const [calView, setCalView]           = useState<'month' | 'week'>('month')
   const navigate = useNavigate()
   const toast    = useToast()
   const confirm  = useConfirm()
 
-  const loadMonth = useCallback(async (d) => {
+  const loadMonth = useCallback(async (d: Date) => {
     try { setMonthAppts(await AppointmentRepository.findByMonth(fmtMonthKey(d))) }
     catch { toast('Erro ao carregar agenda', 'error') }
-  }, [])
+  }, [toast])
 
-  const loadDay = useCallback(async (date) => {
+  const loadDay = useCallback(async (date: string) => {
     try { setDayAppts(await AppointmentRepository.findByDate(date)) }
     catch { toast('Erro ao carregar agenda', 'error') }
-  }, [])
+  }, [toast])
 
-  const loadWeek = useCallback(async (date) => {
+  const loadWeek = useCallback(async (date: string) => {
     try { setWeekAppts(await AppointmentRepository.findByWeek(getWeekStart(date))) }
     catch { toast('Erro ao carregar agenda', 'error') }
-  }, [])
+  }, [toast])
 
   useEffect(() => { PatientRepository.findAll().then(setPatients).catch(() => {}) }, [])
-  useEffect(() => { loadMonth(ref) }, [ref])
-  useEffect(() => { loadDay(selected) }, [selected])
-  useEffect(() => { if (calView === 'week') loadWeek(selected) }, [selected, calView])
+  useEffect(() => { loadMonth(ref) }, [ref, loadMonth])
+  useEffect(() => { loadDay(selected) }, [selected, loadDay])
+  useEffect(() => { if (calView === 'week') loadWeek(selected) }, [selected, calView, loadWeek])
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+  const set = (k: keyof AppointmentForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
 
   function prevMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()-1, 1)) }
   function nextMonth() { setRef(d => new Date(d.getFullYear(), d.getMonth()+1, 1)) }
@@ -123,7 +134,7 @@ export default function Agenda() {
     setSelected(newSel)
     setRef(new Date(d.getFullYear(), d.getMonth(), 1))
   }
-  function openForm(date) { setForm({ ...EMPTY_FORM, date }); setShowForm(true) }
+  function openForm(date: string) { setForm({ ...EMPTY_FORM, date }); setShowForm(true) }
 
   async function handleSave() {
     if (!form.patientId || !form.date || !form.time) { toast('Preencha os campos obrigatórios.', 'error'); return }
@@ -137,27 +148,27 @@ export default function Agenda() {
     }
 
     try {
-      await AppointmentRepository.create(form)
+      await AppointmentRepository.create({ ...form, duration: Number(form.duration) || 60 })
       toast('Consulta agendada!', 'success')
       setShowForm(false)
       setForm(EMPTY_FORM)
       loadMonth(ref)
       loadDay(selected)
       if (calView === 'week') loadWeek(selected)
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
-  async function handleStatus(appointmentId, status) {
+  async function handleStatus(appointmentId: string, status: string) {
     try {
       await AppointmentRepository.updateStatus(appointmentId, status)
       loadDay(selected)
       loadMonth(ref)
       if (calView === 'week') loadWeek(selected)
     }
-    catch (error) { toast(error.message, 'error') }
+    catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
-  async function handleDelete(appointmentId) {
+  async function handleDelete(appointmentId: string) {
     if (!await confirm('Remover esta consulta?')) return
     try {
       await AppointmentRepository.remove(appointmentId)
@@ -165,7 +176,7 @@ export default function Agenda() {
       loadMonth(ref)
       if (calView === 'week') loadWeek(selected)
     }
-    catch (error) { toast(error.message, 'error') }
+    catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
   const visibleAppts = dayAppts.filter(a => {
@@ -174,7 +185,7 @@ export default function Agenda() {
     return true
   })
 
-  const apptByDate = monthAppts.reduce((acc, a) => {
+  const apptByDate = monthAppts.reduce<Record<string, Appointment[]>>((acc, a) => {
     acc[a.date] = acc[a.date] || []
     acc[a.date].push(a)
     return acc
@@ -404,9 +415,19 @@ export default function Agenda() {
 
 const WEEK_DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-function WeekView({ weekStart, appts, selected, todayStr, onSelectDay, onOpenForm, STATUS_CHIP }) {
+interface WeekViewProps {
+  weekStart: string
+  appts: Appointment[]
+  selected: string
+  todayStr: string
+  onSelectDay: (iso: string) => void
+  onOpenForm: (iso: string) => void
+  STATUS_CHIP: Record<string, string>
+}
+
+function WeekView({ weekStart, appts, selected, todayStr, onSelectDay, onOpenForm, STATUS_CHIP }: WeekViewProps) {
   const days = getWeekDays(weekStart)
-  const byDate = appts.reduce((acc, a) => {
+  const byDate = appts.reduce<Record<string, Appointment[]>>((acc, a) => {
     acc[a.date] = acc[a.date] || []
     acc[a.date].push(a)
     return acc
@@ -452,23 +473,30 @@ function WeekView({ weekStart, appts, selected, todayStr, onSelectDay, onOpenFor
   )
 }
 
-function toMin(time) {
+function toMin(time: string) {
   const [h, m] = (time || '00:00').split(':').map(Number)
   return h * 60 + m
 }
 
-function findConflicts(newAppt, existing) {
+function findConflicts(newAppt: { time: string; duration: number | string }, existing: Appointment[]) {
   const start = toMin(newAppt.time)
-  const end   = start + parseInt(newAppt.duration || 60)
+  const end   = start + (parseInt(String(newAppt.duration)) || 60)
   return existing.filter(a => {
     if (a.status === 'cancelado') return false
     const aStart = toMin(a.time)
-    const aEnd   = aStart + parseInt(a.duration || 60)
+    const aEnd   = aStart + (parseInt(String(a.duration)) || 60)
     return start < aEnd && end > aStart
   })
 }
 
-function DayAppointment({ appt, onStatus, onDelete, onPatient }) {
+interface DayAppointmentProps {
+  appt: Appointment
+  onStatus: (id: string, status: string) => void
+  onDelete: (id: string) => void
+  onPatient: () => void
+}
+
+function DayAppointment({ appt, onStatus, onDelete, onPatient }: DayAppointmentProps) {
   return (
     <div className={styles.apptCard}>
       <div className={styles.apptCardHeader}>
@@ -496,7 +524,7 @@ function DayAppointment({ appt, onStatus, onDelete, onPatient }) {
   )
 }
 
-function formatSelectedDate(iso) {
+function formatSelectedDate(iso: string) {
   if (!iso) return ''
   const [y, m, d] = iso.split('-')
   return `${d}/${m}/${y}`

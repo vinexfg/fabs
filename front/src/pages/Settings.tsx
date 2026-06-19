@@ -1,22 +1,29 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SettingsRepository, TemplateRepository, BackupRepository } from '../infrastructure/http'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import type { ClinicSettings, Template } from '../types/entities'
 import styles from './Settings.module.css'
+
+interface PasswordForm {
+  current: string
+  next: string
+  confirm: string
+}
 
 export default function Settings() {
   const toast = useToast()
   const { logout } = useAuth()
   const navigate = useNavigate()
 
-  const [clinic, setClinic] = useState({
+  const [clinic, setClinic] = useState<ClinicSettings>({
     clinicName: '', doctorName: '', cro: '', clinicAddress: '', clinicPhone: '',
   })
-  const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
+  const [pw, setPw] = useState<PasswordForm>({ current: '', next: '', confirm: '' })
   const [savingClinic, setSavingClinic] = useState(false)
   const [savingPw, setSavingPw] = useState(false)
-  const [templates, setTemplates] = useState([])
+  const [templates, setTemplates] = useState<Template[]>([])
   const [newTpl, setNewTpl] = useState('')
   const [savingTpl, setSavingTpl] = useState(false)
 
@@ -30,17 +37,17 @@ export default function Settings() {
     } catch { toast('Erro ao carregar configurações', 'error') }
   }
 
-  async function saveClinic(e) {
+  async function saveClinic(e: React.FormEvent) {
     e.preventDefault()
     setSavingClinic(true)
     try {
       await SettingsRepository.update(clinic)
       toast('Configurações salvas!', 'success')
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
     finally { setSavingClinic(false) }
   }
 
-  async function savePassword(e) {
+  async function savePassword(e: React.FormEvent) {
     e.preventDefault()
     if (pw.next !== pw.confirm) { toast('As senhas não coincidem', 'error'); return }
     if (pw.next.length < 4) { toast('Senha muito curta (mínimo 4 caracteres)', 'error'); return }
@@ -49,7 +56,7 @@ export default function Settings() {
       await SettingsRepository.updatePassword(pw.current, pw.next)
       toast('Senha alterada!', 'success')
       setPw({ current: '', next: '', confirm: '' })
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
     finally { setSavingPw(false) }
   }
 
@@ -60,15 +67,15 @@ export default function Settings() {
       const newTemplate = await TemplateRepository.create({ name: newTpl.trim() })
       setTemplates(current => [...current, newTemplate])
       setNewTpl('')
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
     finally { setSavingTpl(false) }
   }
 
-  async function deleteTemplate(templateId) {
+  async function deleteTemplate(templateId: string) {
     try {
       await TemplateRepository.remove(templateId)
       setTemplates(current => current.filter(t => t.id !== templateId))
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
   async function handleBackupExport() {
@@ -81,10 +88,10 @@ export default function Settings() {
       anchor.click()
       URL.revokeObjectURL(url)
       toast('Backup exportado!', 'success')
-    } catch (error) { toast(error.message, 'error') }
+    } catch (error) { toast(error instanceof Error ? error.message : 'Erro', 'error') }
   }
 
-  async function handleBackupRestore(event) {
+  async function handleBackupRestore(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
     try {
@@ -97,8 +104,8 @@ export default function Settings() {
     event.target.value = ''
   }
 
-  const setC = k => e => setClinic(c => ({ ...c, [k]: e.target.value }))
-  const setP = k => e => setPw(p => ({ ...p, [k]: e.target.value }))
+  const setC = (k: keyof ClinicSettings) => (e: React.ChangeEvent<HTMLInputElement>) => setClinic(c => ({ ...c, [k]: e.target.value }))
+  const setP = (k: keyof PasswordForm) => (e: React.ChangeEvent<HTMLInputElement>) => setPw(p => ({ ...p, [k]: e.target.value }))
 
   return (
     <div className={styles.page}>
