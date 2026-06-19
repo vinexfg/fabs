@@ -30,14 +30,14 @@ type RestoreInput = Partial<{
 const exportAll = (): BackupData => ({
   version: '2.0',
   exportedAt: new Date().toISOString(),
-  patients:     db.prepare('SELECT * FROM patients').all() as Patient[],
-  treatments:   db.prepare('SELECT * FROM treatments').all() as Treatment[],
-  payments:     db.prepare('SELECT * FROM payments').all() as Payment[],
-  evolutions:   db.prepare('SELECT * FROM evolutions').all() as Evolution[],
-  appointments: db.prepare('SELECT * FROM appointments').all() as Appointment[],
-  odontograma:  db.prepare('SELECT * FROM odontograma').all() as OdontogramaTooth[],
-  templates:    db.prepare('SELECT * FROM templates').all() as Template[],
-  budgets:      db.prepare('SELECT * FROM budgets').all() as (Omit<Budget, 'items'> & { items: string })[],
+  patients:     db.prepare('SELECT * FROM patients').all() as unknown as Patient[],
+  treatments:   db.prepare('SELECT * FROM treatments').all() as unknown as Treatment[],
+  payments:     db.prepare('SELECT * FROM payments').all() as unknown as Payment[],
+  evolutions:   db.prepare('SELECT * FROM evolutions').all() as unknown as Evolution[],
+  appointments: db.prepare('SELECT * FROM appointments').all() as unknown as Appointment[],
+  odontograma:  db.prepare('SELECT * FROM odontograma').all() as unknown as OdontogramaTooth[],
+  templates:    db.prepare('SELECT * FROM templates').all() as unknown as Template[],
+  budgets:      db.prepare('SELECT * FROM budgets').all() as unknown as (Omit<Budget, 'items'> & { items: string })[],
 });
 
 const restore = ({ patients = [], treatments = [], payments = [], evolutions = [], appointments = [], odontograma = [], templates = [], budgets = [] }: RestoreInput) => {

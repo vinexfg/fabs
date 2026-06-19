@@ -21,7 +21,7 @@ const findByDate = (date: string): AppointmentWithPatient[] =>
     JOIN patients p ON p.id = a.patientId
     WHERE a.date = ?
     ORDER BY a.time
-  `).all(date) as AppointmentWithPatient[];
+  `).all(date) as unknown as AppointmentWithPatient[];
 
 const findByMonth = (month: string): AppointmentWithPatient[] =>
   db.prepare(`
@@ -30,7 +30,7 @@ const findByMonth = (month: string): AppointmentWithPatient[] =>
     JOIN patients p ON p.id = a.patientId
     WHERE a.date LIKE ?
     ORDER BY a.date, a.time
-  `).all(`${month}%`) as AppointmentWithPatient[];
+  `).all(`${month}%`) as unknown as AppointmentWithPatient[];
 
 const findByWeek = (startDate: string): AppointmentWithPatient[] =>
   db.prepare(`
@@ -39,7 +39,7 @@ const findByWeek = (startDate: string): AppointmentWithPatient[] =>
     JOIN patients p ON p.id = a.patientId
     WHERE a.date >= ? AND a.date < date(?, '+7 days')
     ORDER BY a.date, a.time
-  `).all(startDate, startDate) as AppointmentWithPatient[];
+  `).all(startDate, startDate) as unknown as AppointmentWithPatient[];
 
 const findAll = (): AppointmentWithPatient[] =>
   db.prepare(`
@@ -47,7 +47,7 @@ const findAll = (): AppointmentWithPatient[] =>
     FROM appointments a
     JOIN patients p ON p.id = a.patientId
     ORDER BY a.date DESC, a.time
-  `).all() as AppointmentWithPatient[];
+  `).all() as unknown as AppointmentWithPatient[];
 
 const findTomorrow = (): AppointmentWithPatient[] => {
   const tomorrow = new Date();
@@ -59,21 +59,21 @@ const findTomorrow = (): AppointmentWithPatient[] => {
     JOIN patients p ON p.id = a.patientId
     WHERE a.date = ? AND a.status = 'agendado'
     ORDER BY a.time
-  `).all(date) as AppointmentWithPatient[];
+  `).all(date) as unknown as AppointmentWithPatient[];
 };
 
 const findByPatient = (patientId: string): Appointment[] =>
-  db.prepare('SELECT * FROM appointments WHERE patientId = ? ORDER BY date DESC, time').all(patientId) as Appointment[];
+  db.prepare('SELECT * FROM appointments WHERE patientId = ? ORDER BY date DESC, time').all(patientId) as unknown as Appointment[];
 
 const findById = (id: string): Appointment | undefined =>
-  db.prepare('SELECT * FROM appointments WHERE id = ?').get(id) as Appointment | undefined;
+  db.prepare('SELECT * FROM appointments WHERE id = ?').get(id) as unknown as Appointment | undefined;
 
 const findByIdWithPatient = (id: string): AppointmentWithPatient | undefined =>
   db.prepare(`
     SELECT a.*, p.nome as patientNome, p.telefone as patientTelefone
     FROM appointments a JOIN patients p ON p.id = a.patientId
     WHERE a.id = ?
-  `).get(id) as AppointmentWithPatient | undefined;
+  `).get(id) as unknown as AppointmentWithPatient | undefined;
 
 const create = ({ patientId, date, time, duration, type, status, notes }: AppointmentInput): AppointmentWithPatient | undefined => {
   const id = randomUUID();
@@ -84,7 +84,7 @@ const create = ({ patientId, date, time, duration, type, status, notes }: Appoin
 
 const update = (id: string, { date, time, duration, type, status, notes }: AppointmentInput): Appointment | undefined => {
   db.prepare('UPDATE appointments SET date=?, time=?, duration=?, type=?, status=?, notes=? WHERE id=?')
-    .run(date, time, duration, type, status, notes ?? null, id);
+    .run(date, time, duration || 60, type || 'Consulta', status || 'agendado', notes ?? null, id);
   return findById(id);
 };
 

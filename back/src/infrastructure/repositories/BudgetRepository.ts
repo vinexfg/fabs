@@ -13,11 +13,11 @@ export interface BudgetInput {
 type BudgetRow = Omit<Budget, 'items'> & { items: string };
 
 const findByPatient = (patientId: string): Budget[] =>
-  (db.prepare('SELECT * FROM budgets WHERE patientId = ? ORDER BY criadoEm DESC').all(patientId) as BudgetRow[])
+  (db.prepare('SELECT * FROM budgets WHERE patientId = ? ORDER BY criadoEm DESC').all(patientId) as unknown as BudgetRow[])
     .map(r => ({ ...r, items: JSON.parse(r.items || '[]') }));
 
 const findById = (id: string): Budget | null => {
-  const r = db.prepare('SELECT * FROM budgets WHERE id = ?').get(id) as BudgetRow | undefined;
+  const r = db.prepare('SELECT * FROM budgets WHERE id = ?').get(id) as unknown as BudgetRow | undefined;
   if (!r) return null;
   return { ...r, items: JSON.parse(r.items || '[]') };
 };

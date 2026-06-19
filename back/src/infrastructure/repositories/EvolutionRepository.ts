@@ -12,10 +12,10 @@ export interface EvolutionInput {
 }
 
 const findByPatient = (patientId: string): Evolution[] =>
-  db.prepare('SELECT * FROM evolutions WHERE patientId = ? ORDER BY data DESC, hora DESC').all(patientId) as Evolution[];
+  db.prepare('SELECT * FROM evolutions WHERE patientId = ? ORDER BY data DESC, hora DESC').all(patientId) as unknown as Evolution[];
 
 const findById = (id: string): Evolution | undefined =>
-  db.prepare('SELECT * FROM evolutions WHERE id = ?').get(id) as Evolution | undefined;
+  db.prepare('SELECT * FROM evolutions WHERE id = ?').get(id) as unknown as Evolution | undefined;
 
 const create = ({ patientId, proc, data, hora, notas, proxConsulta }: EvolutionInput): Evolution | undefined => {
   const id = randomUUID();

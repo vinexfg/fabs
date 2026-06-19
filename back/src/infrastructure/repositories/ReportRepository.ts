@@ -33,7 +33,7 @@ const getTopProcedures = (): TopProcedure[] =>
     GROUP BY proc
     ORDER BY count DESC
     LIMIT 20
-  `).all() as TopProcedure[];
+  `).all() as unknown as TopProcedure[];
 
 const getAgendaPorMes = (): AgendaPorMes[] =>
   db.prepare(`
@@ -48,7 +48,7 @@ const getAgendaPorMes = (): AgendaPorMes[] =>
     WHERE date IS NOT NULL AND date != ''
     GROUP BY mes
     ORDER BY mes
-  `).all() as AgendaPorMes[];
+  `).all() as unknown as AgendaPorMes[];
 
 const getPacientesPorMes = (): PacientesPorMes[] =>
   db.prepare(`
@@ -57,6 +57,6 @@ const getPacientesPorMes = (): PacientesPorMes[] =>
     WHERE criadoEm IS NOT NULL
     GROUP BY mes
     ORDER BY mes
-  `).all() as PacientesPorMes[];
+  `).all() as unknown as PacientesPorMes[];
 
 export default { getTopProcedures, getAgendaPorMes, getPacientesPorMes };

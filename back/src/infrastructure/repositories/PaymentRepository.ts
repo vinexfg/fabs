@@ -26,13 +26,13 @@ const findAll = (): PaymentWithPatient[] =>
     SELECT py.*, p.nome as patientNome
     FROM payments py JOIN patients p ON p.id = py.patientId
     ORDER BY py.data DESC
-  `).all() as PaymentWithPatient[];
+  `).all() as unknown as PaymentWithPatient[];
 
 const findByPatient = (patientId: string): Payment[] =>
-  db.prepare('SELECT * FROM payments WHERE patientId = ? ORDER BY data DESC').all(patientId) as Payment[];
+  db.prepare('SELECT * FROM payments WHERE patientId = ? ORDER BY data DESC').all(patientId) as unknown as Payment[];
 
 const findById = (id: string): Payment | undefined =>
-  db.prepare('SELECT * FROM payments WHERE id = ?').get(id) as Payment | undefined;
+  db.prepare('SELECT * FROM payments WHERE id = ?').get(id) as unknown as Payment | undefined;
 
 const findInadimplencia = (): (Inadimplente & { emAberto: number })[] => {
   const rows = db.prepare(`
@@ -49,7 +49,7 @@ const findInadimplencia = (): (Inadimplente & { emAberto: number })[] => {
       COALESCE((SELECT SUM(valor) FROM treatments WHERE patientId = p.id), 0) -
       COALESCE((SELECT SUM(valor) FROM payments   WHERE patientId = p.id), 0)
     ) DESC
-  `).all() as Inadimplente[];
+  `).all() as unknown as Inadimplente[];
   return rows.map((row) => ({ ...row, emAberto: row.totalTrat - row.totalPago }));
 };
 

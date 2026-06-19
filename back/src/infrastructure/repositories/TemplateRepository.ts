@@ -9,10 +9,10 @@ export interface TemplateInput {
 }
 
 const findAll = (): Template[] =>
-  db.prepare('SELECT * FROM templates ORDER BY name').all() as Template[];
+  db.prepare('SELECT * FROM templates ORDER BY name').all() as unknown as Template[];
 
 const findById = (id: string): Template | undefined =>
-  db.prepare('SELECT * FROM templates WHERE id = ?').get(id) as Template | undefined;
+  db.prepare('SELECT * FROM templates WHERE id = ?').get(id) as unknown as Template | undefined;
 
 const create = ({ name, valor, obs }: TemplateInput): Template | undefined => {
   const id = randomUUID();

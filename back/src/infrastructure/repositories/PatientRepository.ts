@@ -26,7 +26,7 @@ export interface PaginatedPatients {
 }
 
 const findAll = (): Patient[] =>
-  db.prepare('SELECT * FROM patients ORDER BY nome').all() as Patient[];
+  db.prepare('SELECT * FROM patients ORDER BY nome').all() as unknown as Patient[];
 
 const findPaginated = ({ q = '', page = 1, limit = 15 } = {}): PaginatedPatients => {
   const offset = (Number(page) - 1) * Number(limit);
@@ -35,13 +35,13 @@ const findPaginated = ({ q = '', page = 1, limit = 15 } = {}): PaginatedPatients
     ? 'WHERE nome LIKE ? OR telefone LIKE ? OR cpf LIKE ? OR convenio LIKE ?'
     : '';
   const params = q ? [like, like, like, like] : [];
-  const rows  = db.prepare(`SELECT * FROM patients ${where} ORDER BY nome LIMIT ? OFFSET ?`).all(...params, Number(limit), offset) as Patient[];
+  const rows  = db.prepare(`SELECT * FROM patients ${where} ORDER BY nome LIMIT ? OFFSET ?`).all(...params, Number(limit), offset) as unknown as Patient[];
   const { total } = db.prepare(`SELECT COUNT(*) as total FROM patients ${where}`).get(...params) as { total: number };
   return { patients: rows, total, page: Number(page), limit: Number(limit) };
 };
 
 const findById = (id: string): Patient | undefined =>
-  db.prepare('SELECT * FROM patients WHERE id = ?').get(id) as Patient | undefined;
+  db.prepare('SELECT * FROM patients WHERE id = ?').get(id) as unknown as Patient | undefined;
 
 const create = ({ nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, foto, anamnese }: PatientInput): Patient | undefined => {
   const id = randomUUID();

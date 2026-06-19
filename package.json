@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "build": "npm install --prefix back && npm install --prefix front && npm run build --prefix front",
-    "start": "node back/index.js",
+    "start": "npm start --prefix back",
     "dev": "concurrently \"npm run dev --prefix back\" \"npm run dev --prefix front\"",
     "install:all": "npm install && npm install --prefix back && npm install --prefix front",
-    "lint": "npm run lint --prefix back && npm run lint --prefix front"
+    "lint": "npm run lint --prefix back && npm run lint --prefix front",
+    "typecheck": "npm run typecheck --prefix back && npm run typecheck --prefix front"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

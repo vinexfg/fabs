@@ -14,10 +14,10 @@ export interface ToothCreateInput {
 }
 
 const findByPatient = (patientId: string): OdontogramaTooth[] =>
-  db.prepare('SELECT * FROM odontograma WHERE patientId = ?').all(patientId) as OdontogramaTooth[];
+  db.prepare('SELECT * FROM odontograma WHERE patientId = ?').all(patientId) as unknown as OdontogramaTooth[];
 
 const findById = (id: string): OdontogramaTooth | undefined =>
-  db.prepare('SELECT * FROM odontograma WHERE id = ?').get(id) as OdontogramaTooth | undefined;
+  db.prepare('SELECT * FROM odontograma WHERE id = ?').get(id) as unknown as OdontogramaTooth | undefined;
 
 const findByPatientAndTooth = (patientId: string, tooth: string): { id: string } | undefined =>
   db.prepare('SELECT id FROM odontograma WHERE patientId = ? AND tooth = ?').get(patientId, tooth) as { id: string } | undefined;

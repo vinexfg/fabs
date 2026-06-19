@@ -12,10 +12,10 @@ export interface TreatmentInput {
 }
 
 const findByPatient = (patientId: string): Treatment[] =>
-  db.prepare('SELECT * FROM treatments WHERE patientId = ? ORDER BY criadoEm').all(patientId) as Treatment[];
+  db.prepare('SELECT * FROM treatments WHERE patientId = ? ORDER BY criadoEm').all(patientId) as unknown as Treatment[];
 
 const findById = (id: string): Treatment | undefined =>
-  db.prepare('SELECT * FROM treatments WHERE id = ?').get(id) as Treatment | undefined;
+  db.prepare('SELECT * FROM treatments WHERE id = ?').get(id) as unknown as Treatment | undefined;
 
 const create = ({ patientId, proc, dente, valor, status, obs }: TreatmentInput): Treatment | undefined => {
   const id = randomUUID();
