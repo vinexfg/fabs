@@ -17,6 +17,26 @@ const findByPatient = (patientId: string): Evolution[] =>
 const findById = (id: string): Evolution | undefined =>
   db.prepare('SELECT * FROM evolutions WHERE id = ?').get(id) as unknown as Evolution | undefined;
 
+export interface EvolutionSearchResult {
+  id: string;
+  proc: string;
+  data: string | null;
+  notas: string | null;
+  patientId: string;
+  patientNome: string;
+}
+
+const search = (q: string): EvolutionSearchResult[] => {
+  const like = `%${q}%`;
+  return db.prepare(`
+    SELECT e.id, e.proc, e.data, e.notas, e.patientId, p.nome as patientNome
+    FROM evolutions e
+    JOIN patients p ON p.id = e.patientId
+    WHERE e.proc LIKE ? OR e.notas LIKE ?
+    ORDER BY e.data DESC LIMIT 5
+  `).all(like, like) as unknown as EvolutionSearchResult[];
+};
+
 const create = ({ patientId, proc, data, hora, notas, proxConsulta }: EvolutionInput): Evolution | undefined => {
   const id = randomUUID();
   db.prepare('INSERT INTO evolutions (id, patientId, proc, data, hora, notas, proxConsulta) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -33,4 +53,4 @@ const update = (id: string, { proc, data, hora, notas, proxConsulta }: Evolution
 const remove = (id: string) =>
   db.prepare('DELETE FROM evolutions WHERE id = ?').run(id);
 
-export default { findByPatient, findById, create, update, remove };
+export default { findByPatient, findById, search, create, update, remove };

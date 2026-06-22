@@ -62,6 +62,27 @@ const findTomorrow = (): AppointmentWithPatient[] => {
   `).all(date) as unknown as AppointmentWithPatient[];
 };
 
+export interface AppointmentSearchResult {
+  id: string;
+  date: string;
+  time: string;
+  type: string;
+  status: string;
+  patientId: string;
+  patientNome: string;
+}
+
+const search = (q: string): AppointmentSearchResult[] => {
+  const like = `%${q}%`;
+  return db.prepare(`
+    SELECT a.id, a.date, a.time, a.type, a.status, a.patientId, p.nome as patientNome
+    FROM appointments a
+    JOIN patients p ON p.id = a.patientId
+    WHERE p.nome LIKE ? OR a.type LIKE ? OR a.notes LIKE ?
+    ORDER BY a.date DESC LIMIT 5
+  `).all(like, like, like) as unknown as AppointmentSearchResult[];
+};
+
 const findByPatient = (patientId: string): Appointment[] =>
   db.prepare('SELECT * FROM appointments WHERE patientId = ? ORDER BY date DESC, time').all(patientId) as unknown as Appointment[];
 
@@ -96,4 +117,4 @@ const updateStatus = (id: string, status: string): Appointment | undefined => {
 const remove = (id: string) =>
   db.prepare('DELETE FROM appointments WHERE id = ?').run(id);
 
-export default { findByDate, findByMonth, findByWeek, findAll, findTomorrow, findByPatient, findById, create, update, updateStatus, remove };
+export default { findByDate, findByMonth, findByWeek, findAll, findTomorrow, findByPatient, findById, search, create, update, updateStatus, remove };

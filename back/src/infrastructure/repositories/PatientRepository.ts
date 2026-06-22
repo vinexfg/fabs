@@ -25,6 +25,14 @@ export interface PaginatedPatients {
   limit: number;
 }
 
+export interface PatientSearchResult {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  cpf: string | null;
+  convenio: string | null;
+}
+
 const findAll = (): Patient[] =>
   db.prepare('SELECT * FROM patients ORDER BY nome').all() as unknown as Patient[];
 
@@ -42,6 +50,16 @@ const findPaginated = ({ q = '', page = 1, limit = 15 } = {}): PaginatedPatients
 
 const findById = (id: string): Patient | undefined =>
   db.prepare('SELECT * FROM patients WHERE id = ?').get(id) as unknown as Patient | undefined;
+
+const search = (q: string): PatientSearchResult[] => {
+  const like = `%${q}%`;
+  return db.prepare(`
+    SELECT id, nome, telefone, cpf, convenio
+    FROM patients
+    WHERE nome LIKE ? OR telefone LIKE ? OR cpf LIKE ?
+    ORDER BY nome LIMIT 5
+  `).all(like, like, like) as unknown as PatientSearchResult[];
+};
 
 const create = ({ nome, dataNascimento, cpf, telefone, email, endereco, convenio, alergias, medicamentos, conds, queixa, foto, anamnese }: PatientInput): Patient | undefined => {
   const id = randomUUID();
@@ -70,4 +88,4 @@ const remove = (id: string): void => {
   db.prepare('DELETE FROM patients WHERE id = ?').run(id);
 };
 
-export default { findAll, findPaginated, findById, create, update, remove };
+export default { findAll, findPaginated, findById, search, create, update, remove };
