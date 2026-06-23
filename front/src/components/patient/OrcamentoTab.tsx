@@ -49,6 +49,7 @@ export default function OrcamentoTab({ patientId, patient, clinic }: OrcamentoTa
 
   const printOrcamento = useReactToPrint({ contentRef: orcamentoRef })
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [patientId])
 
   async function load() {

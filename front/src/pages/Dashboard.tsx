@@ -36,6 +36,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const toast = useToast()
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [])
 
   async function load() {

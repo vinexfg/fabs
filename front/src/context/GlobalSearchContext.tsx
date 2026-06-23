@@ -26,6 +26,7 @@ export function GlobalSearchProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={{ open, setOpen }}>{children}</Ctx.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useGlobalSearch() {
   const ctx = useContext(Ctx)
   if (!ctx) throw new Error('useGlobalSearch deve ser usado dentro de GlobalSearchProvider')

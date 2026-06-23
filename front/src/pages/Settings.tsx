@@ -27,6 +27,7 @@ export default function Settings() {
   const [newTpl, setNewTpl] = useState('')
   const [savingTpl, setSavingTpl] = useState(false)
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAll() }, [])
 
   async function loadAll() {

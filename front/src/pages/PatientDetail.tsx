@@ -60,6 +60,7 @@ export default function PatientDetail() {
   const [docModal, setDocModal]   = useState<'receita' | 'atestado' | null>(null)
   const [clinic, setClinic]       = useState<Partial<ClinicSettings>>({})
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAll() }, [id])
 
   async function loadAll() {

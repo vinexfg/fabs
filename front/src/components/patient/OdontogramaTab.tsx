@@ -39,6 +39,7 @@ export default function OdontogramaTab({ patientId }: { patientId: string }) {
   const popupRef = useRef<HTMLDivElement>(null)
   const toast = useToast()
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [patientId])
 
   useEffect(() => {

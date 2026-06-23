@@ -40,6 +40,7 @@ export default function Relatorios() {
 
   const handlePrint = useReactToPrint({ contentRef: printRef })
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [])
 
   async function load() {
