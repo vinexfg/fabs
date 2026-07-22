@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { TREATMENT_STATUS_LABELS } from '../../../utils/treatmentStatus'
 import type { Patient, Treatment, Payment, Evolution } from '../../../types/entities'
 import './print.css'
 
@@ -9,12 +10,6 @@ const PAYMENT_FORMS: Record<string, string> = {
   cartao_debito: 'Cartão Débito',
   convenio: 'Convênio',
   cheque: 'Cheque',
-}
-
-const TREATMENT_STATUS_LABELS: Record<string, string> = {
-  pendente: 'Pendente',
-  em_andamento: 'Em andamento',
-  concluido: 'Concluído',
 }
 
 function formatDate(dateString: string | null) {

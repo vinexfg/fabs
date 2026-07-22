@@ -8,6 +8,7 @@ import { SkeletonStatCards, SkeletonList } from '../components/Skeleton'
 import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
 import { getBirthdays } from '../utils/birthdays'
 import { buildReminderWaLink, buildBirthdayWaLink } from '../utils/dashboardMessages'
+import { APPOINTMENT_STATUS_LABELS as STATUS_LABELS } from '../utils/appointmentStatus'
 import StatCard from '../components/dashboard/StatCard'
 import PatientRow from '../components/dashboard/PatientRow'
 import type { Patient, Appointment, ClinicSettings } from '../types/entities'
@@ -18,10 +19,6 @@ const STATUS_BADGE: Record<string, string> = {
   realizado: styles.statusRealizado,
   cancelado: styles.statusCancelado,
   faltou:    styles.statusFaltou,
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou',
 }
 
 type NotesSaveStatus = 'idle' | 'saving' | 'saved'

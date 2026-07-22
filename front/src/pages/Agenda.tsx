@@ -8,14 +8,13 @@ import WeekView from '../components/agenda/WeekView'
 import DayAppointment from '../components/agenda/DayAppointment'
 import { toISO, today, fmtMonthKey, getCalendarDays, getWeekStart, formatSelectedDate } from '../utils/calendar'
 import { findConflicts } from '../utils/appointmentConflicts'
+import { APPOINTMENT_STATUS_LABELS as STATUS_LABELS } from '../utils/appointmentStatus'
 import type { Appointment, Patient } from '../types/entities'
 import styles from './Agenda.module.css'
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DAYS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 const TYPES  = ['Consulta','Limpeza/Profilaxia','Extração','Tratamento de Canal','Implante','Restauração','Prótese','Ortodontia','Avaliação','Retorno']
-
-const STATUS_LABELS: Record<string, string> = { agendado: 'Agendado', realizado: 'Realizado', cancelado: 'Cancelado', faltou: 'Faltou' }
 
 const STATUS_CHIP: Record<string, string> = {
   agendado:  styles.calChipAgendado,
