@@ -1,19 +1,5 @@
 import type { Patient, Payment } from '../types/entities'
-
-const PAYMENT_FORMS: Record<string, string> = {
-  pix: 'PIX',
-  dinheiro: 'Dinheiro',
-  cartao_credito: 'Cartão Crédito',
-  cartao_debito: 'Cartão Débito',
-  convenio: 'Convênio',
-  cheque: 'Cheque',
-}
-
-function formatDate(dateString: string | null) {
-  if (!dateString) return '—'
-  const [year, month, day] = dateString.split('-')
-  return `${day}/${month}/${year}`
-}
+import { PAYMENT_FORMS, formatDateBR as formatDate } from './format'
 
 function downloadCsv(csv: string, filename: string) {
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
