@@ -3,7 +3,7 @@ import { TreatmentRepository, TemplateRepository } from '../../infrastructure/ht
 import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
-import { Empty } from '../../pages/Dashboard'
+import { Empty } from '../Empty'
 import type { Treatment, Template } from '../../types/entities'
 import styles from './TratamentoTab.module.css'
 

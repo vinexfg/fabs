@@ -6,6 +6,10 @@ import PatientForm from '../components/patient/PatientForm'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonStatCards, SkeletonList } from '../components/Skeleton'
 import { openWhatsAppSequential } from '../utils/openWhatsAppSequential'
+import { getBirthdays } from '../utils/birthdays'
+import { buildReminderWaLink, buildBirthdayWaLink } from '../utils/dashboardMessages'
+import StatCard from '../components/dashboard/StatCard'
+import PatientRow from '../components/dashboard/PatientRow'
 import type { Patient, Appointment, ClinicSettings } from '../types/entities'
 import styles from './Dashboard.module.css'
 
@@ -57,21 +61,6 @@ export default function Dashboard() {
       setNotes(notesData.notes ?? '')
     } catch { toast('Erro ao carregar dados', 'error') }
     finally { setLoading(false) }
-  }
-
-  function buildWaLink(appt: Appointment): string | null {
-    const phone = (appt.patientTelefone || '').replace(/\D/g, '')
-    if (!phone) return null
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const dateStr = tomorrow.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
-    const msg = encodeURIComponent(
-      `Olá ${(appt.patientNome || '').split(' ')[0]}! 👋\n` +
-      `Lembrando que você tem consulta *amanhã, ${dateStr}*, às *${appt.time?.slice(0,5)}h*` +
-      `${clinic.clinicName ? ` no *${clinic.clinicName}*` : ''}.\n` +
-      `Em caso de dúvidas, estamos à disposição. Até amanhã! 😊`
-    )
-    return `https://wa.me/55${phone}?text=${msg}`
   }
 
   function markSent(id: string) {
@@ -193,8 +182,7 @@ export default function Dashboard() {
                   const [, mm, dd] = (p.dataNascimento || '').split('-')
                   const isToday = birthdaysToday.includes(p)
                   const age = p.dataNascimento ? new Date().getFullYear() - parseInt(p.dataNascimento.split('-')[0]) : null
-                  const phone = (p.telefone || '').replace(/\D/g, '')
-                  const waMsg = phone ? encodeURIComponent(`Olá ${p.nome.split(' ')[0]}! 🎂 A equipe ${clinic.clinicName || 'DenteFácil'} deseja um feliz aniversário! Que seja um dia especial!`) : null
+                  const waLink = buildBirthdayWaLink(p, clinic.clinicName)
                   return (
                     <div key={p.id} className={styles.birthdayRow}>
                       <div className={`${styles.birthdayIcon} ${isToday ? styles.birthdayIconToday : ''}`}>
@@ -207,9 +195,9 @@ export default function Dashboard() {
                           {isToday ? ' · Hoje! 🎉' : ' · Esta semana'}
                         </p>
                       </div>
-                      {waMsg && phone && (
+                      {waLink && (
                         <a
-                          href={`https://wa.me/55${phone}?text=${waMsg}`}
+                          href={waLink}
                           target="_blank" rel="noreferrer"
                           className={styles.waSend}
                         >
@@ -264,9 +252,9 @@ export default function Dashboard() {
                 <button
                   className={styles.reminderAllBtn}
                   onClick={() => {
-                    const withLink = tomorrowAppts.filter(a => buildWaLink(a))
+                    const withLink = tomorrowAppts.filter(a => buildReminderWaLink(a, clinic.clinicName))
                     if (withLink.length === 0) { toast('Nenhum paciente tem telefone cadastrado', 'error'); return }
-                    openWhatsAppSequential(withLink.map(a => buildWaLink(a) as string), () => {})
+                    openWhatsAppSequential(withLink.map(a => buildReminderWaLink(a, clinic.clinicName) as string), () => {})
                     setSentReminders(new Set(tomorrowAppts.map(a => a.id)))
                     toast(`${withLink.length} lembrete${withLink.length !== 1 ? 's' : ''} sendo aberto${withLink.length !== 1 ? 's' : ''}...`, 'success')
                   }}
@@ -276,7 +264,7 @@ export default function Dashboard() {
               </div>
               <div className={styles.list}>
                 {tomorrowAppts.map(a => {
-                  const waLink = buildWaLink(a)
+                  const waLink = buildReminderWaLink(a, clinic.clinicName)
                   const sent = sentReminders.has(a.id)
                   return (
                     <div key={a.id} className={styles.reminderRow}>
@@ -322,88 +310,6 @@ export default function Dashboard() {
       )}
 
       {showForm && <PatientForm onSave={handleCreate} onClose={() => setShowForm(false)} />}
-    </div>
-  )
-}
-
-interface StatCardProps {
-  label: string
-  value: number
-  icon: string
-  bg: string
-  text: string
-  trend?: string | null
-  trendPositive?: boolean
-}
-
-function StatCard({ label, value, icon, bg, text, trend, trendPositive }: StatCardProps) {
-  return (
-    <div className={styles.statCard}>
-      <div className={`${styles.statIcon} ${bg}`}>{icon}</div>
-      <div>
-        <p className={`${styles.statValue} ${text}`}>{value}</p>
-        <p className={styles.statLabel}>{label}</p>
-        {trend && (
-          <p className={`${styles.statTrend} ${trendPositive ? styles.trendUp : styles.trendDown}`}>
-            {trend}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-export function PatientRow({ patient: p, onClick }: { patient: Patient; onClick: () => void }) {
-  const initials = p.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-  return (
-    <div className={`group ${styles.row}`} onClick={onClick}>
-      {p.foto
-        ? <img src={p.foto} alt={p.nome} className={styles.avatar} />
-        : <div className={styles.avatarFallback}>{initials}</div>
-      }
-      <div className={styles.rowInfo}>
-        <p className={styles.rowName}>{p.nome}</p>
-        <p className={styles.rowSub}>{p.telefone || 'Sem telefone'}</p>
-      </div>
-      <span className={styles.arrow}>→</span>
-    </div>
-  )
-}
-
-function getBirthdays(patients: Patient[]) {
-  const today = new Date()
-  const mm = String(today.getMonth() + 1).padStart(2, '0')
-  const dd = String(today.getDate()).padStart(2, '0')
-  const todayMMDD = `${mm}-${dd}`
-
-  const birthdaysToday: Patient[] = []
-  const birthdaysWeek: Patient[] = []
-
-  patients.forEach(p => {
-    if (!p.dataNascimento) return
-    const parts = p.dataNascimento.split('-')
-    if (parts.length < 3) return
-    const bMMDD = `${parts[1]}-${parts[2]}`
-    if (bMMDD === todayMMDD) { birthdaysToday.push(p); return }
-    const bThisYear = new Date(today.getFullYear(), parseInt(parts[1]) - 1, parseInt(parts[2]))
-    const diff = (bThisYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    if (diff > 0 && diff <= 7) birthdaysWeek.push(p)
-  })
-
-  birthdaysWeek.sort((a, b) => {
-    const [, am, ad] = (a.dataNascimento as string).split('-')
-    const [, bm, bd] = (b.dataNascimento as string).split('-')
-    return `${am}-${ad}`.localeCompare(`${bm}-${bd}`)
-  })
-
-  return { birthdaysToday, birthdaysWeek }
-}
-
-export function Empty({ icon, text }: { icon: string; text: string }) {
-  return (
-    <div className={styles.empty}>
-      <div className={styles.emptyIcon}>{icon}</div>
-      <p className="text-sm">{text}</p>
     </div>
   )
 }

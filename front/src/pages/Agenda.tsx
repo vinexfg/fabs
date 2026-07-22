@@ -4,6 +4,10 @@ import { AppointmentRepository, PatientRepository } from '../infrastructure/http
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 import Modal from '../components/Modal'
+import WeekView from '../components/agenda/WeekView'
+import DayAppointment from '../components/agenda/DayAppointment'
+import { toISO, today, fmtMonthKey, getCalendarDays, getWeekStart, formatSelectedDate } from '../utils/calendar'
+import { findConflicts } from '../utils/appointmentConflicts'
 import type { Appointment, Patient } from '../types/entities'
 import styles from './Agenda.module.css'
 
@@ -32,36 +36,6 @@ const STATUS_BTN_ACTIVE: Record<string, string> = {
   realizado: styles.statusRealizado,
   cancelado: styles.statusCancelado,
   faltou:    styles.statusFaltou,
-}
-
-function toISO(d: Date) { return d.toISOString().split('T')[0] }
-function today() { return toISO(new Date()) }
-function fmtMonthKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` }
-
-function getCalendarDays(year: number, month: number) {
-  const first = new Date(year, month, 1)
-  const last  = new Date(year, month+1, 0)
-  const days: (Date | null)[]  = Array(first.getDay()).fill(null)
-  for (let d = 1; d <= last.getDate(); d++) days.push(new Date(year, month, d))
-  return days
-}
-
-// Returns Monday of the week that contains `dateStr`
-function getWeekStart(dateStr: string) {
-  const d = new Date(dateStr + 'T12:00:00')
-  const day = d.getDay() // 0=Sun
-  const diff = (day === 0 ? -6 : 1 - day)
-  d.setDate(d.getDate() + diff)
-  return toISO(d)
-}
-
-function getWeekDays(weekStartISO: string) {
-  const start = new Date(weekStartISO + 'T12:00:00')
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    return d
-  })
 }
 
 interface AppointmentForm {
@@ -349,6 +323,8 @@ export default function Agenda() {
                     <DayAppointment
                       key={a.id}
                       appt={a}
+                      statusLabels={STATUS_LABELS}
+                      statusBtnActive={STATUS_BTN_ACTIVE}
                       onStatus={handleStatus}
                       onDelete={handleDelete}
                       onPatient={() => navigate(`/pacientes/${a.patientId}`)}
@@ -411,121 +387,4 @@ export default function Agenda() {
       )}
     </div>
   )
-}
-
-const WEEK_DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-
-interface WeekViewProps {
-  weekStart: string
-  appts: Appointment[]
-  selected: string
-  todayStr: string
-  onSelectDay: (iso: string) => void
-  onOpenForm: (iso: string) => void
-  STATUS_CHIP: Record<string, string>
-}
-
-function WeekView({ weekStart, appts, selected, todayStr, onSelectDay, onOpenForm, STATUS_CHIP }: WeekViewProps) {
-  const days = getWeekDays(weekStart)
-  const byDate = appts.reduce<Record<string, Appointment[]>>((acc, a) => {
-    acc[a.date] = acc[a.date] || []
-    acc[a.date].push(a)
-    return acc
-  }, {})
-
-  return (
-    <div className={styles.weekGrid}>
-      {days.map((day, i) => {
-        const iso = toISO(day)
-        const dayAppts = byDate[iso] || []
-        const isToday    = iso === todayStr
-        const isSelected = iso === selected
-        return (
-          <div
-            key={iso}
-            className={`${styles.weekCol} ${isSelected ? styles.weekColSelected : isToday ? styles.weekColToday : styles.weekColDefault}`}
-            onClick={() => onSelectDay(iso)}
-          >
-            <div className={styles.weekColHeader}>
-              <p className={`${styles.weekDayName} ${isSelected ? styles.weekDayNameSelected : ''}`}>{WEEK_DAYS_SHORT[i]}</p>
-              <p className={`${styles.weekDayNum} ${isSelected ? styles.weekDayNumSelected : isToday ? styles.weekDayNumToday : styles.weekDayNumDefault}`}>
-                {day.getDate()}
-              </p>
-            </div>
-            <div className={styles.weekAppts}>
-              {dayAppts.map(a => (
-                <div key={a.id} className={`${styles.weekApptChip} ${isSelected ? styles.calChipSelected : STATUS_CHIP[a.status]}`}>
-                  <span className={styles.weekApptTime}>{a.time?.slice(0,5)}</span>
-                  <span className={styles.weekApptName}>{a.patientNome?.split(' ')[0]}</span>
-                </div>
-              ))}
-              {dayAppts.length === 0 && (
-                <button
-                  className={styles.weekAddBtn}
-                  onClick={e => { e.stopPropagation(); onOpenForm(iso) }}
-                >+</button>
-              )}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function toMin(time: string) {
-  const [h, m] = (time || '00:00').split(':').map(Number)
-  return h * 60 + m
-}
-
-function findConflicts(newAppt: { time: string; duration: number | string }, existing: Appointment[]) {
-  const start = toMin(newAppt.time)
-  const end   = start + (parseInt(String(newAppt.duration)) || 60)
-  return existing.filter(a => {
-    if (a.status === 'cancelado') return false
-    const aStart = toMin(a.time)
-    const aEnd   = aStart + (parseInt(String(a.duration)) || 60)
-    return start < aEnd && end > aStart
-  })
-}
-
-interface DayAppointmentProps {
-  appt: Appointment
-  onStatus: (id: string, status: string) => void
-  onDelete: (id: string) => void
-  onPatient: () => void
-}
-
-function DayAppointment({ appt, onStatus, onDelete, onPatient }: DayAppointmentProps) {
-  return (
-    <div className={styles.apptCard}>
-      <div className={styles.apptCardHeader}>
-        <div>
-          <p className={styles.apptTitle}>{appt.time} — {appt.patientNome}</p>
-          <p className={styles.apptMeta}>{appt.type} · {appt.duration} min</p>
-        </div>
-        <button className="btn-danger btn-sm" onClick={() => onDelete(appt.id)}>🗑️</button>
-      </div>
-      {appt.notes && <p className={styles.apptNotes}>{appt.notes}</p>}
-      <div className={styles.apptActions}>
-        <button className={styles.apptPatientLink} onClick={() => onPatient()}>Ver ficha →</button>
-        <span className={styles.apptDivider}>·</span>
-        {Object.entries(STATUS_LABELS).map(([k, l]) => (
-          <button
-            key={k}
-            onClick={() => onStatus(appt.id, k)}
-            className={`${styles.statusBtnBase} ${appt.status === k ? STATUS_BTN_ACTIVE[k] : styles.statusBtnInactive}`}
-          >
-            {l}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function formatSelectedDate(iso: string) {
-  if (!iso) return ''
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
 }

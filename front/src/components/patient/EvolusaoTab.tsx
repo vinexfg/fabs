@@ -3,7 +3,7 @@ import { EvolutionRepository } from '../../infrastructure/http'
 import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
 import Modal from '../Modal'
-import { Empty } from '../../pages/Dashboard'
+import { Empty } from '../Empty'
 import type { Evolution } from '../../types/entities'
 import styles from './EvolusaoTab.module.css'
 

@@ -250,12 +250,3 @@
          focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 dark:focus:border-blue-500
          transition-all duration-150;
 }
-
-/* Empty state */
-.empty {
-  @apply text-center py-12 text-slate-400 dark:text-slate-600;
-}
-
-.emptyIcon {
-  @apply text-5xl mb-3 opacity-60;
-}
