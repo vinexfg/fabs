@@ -1,20 +1,10 @@
 import { forwardRef } from 'react'
+import { PAYMENT_FORMS as FORMAS, formatCurrency as fmtR, formatDateBR } from '../../../utils/format'
 import type { Patient, Payment, ClinicSettings } from '../../../types/entities'
 import './print.css'
 
-const FORMAS: Record<string, string> = {
-  pix: 'PIX', dinheiro: 'Dinheiro',
-  cartao_credito: 'Cartão de Crédito', cartao_debito: 'Cartão de Débito',
-  convenio: 'Convênio', cheque: 'Cheque',
-}
-
-function fmtR(v: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0)
-}
 function fmtDate(d: string | null) {
-  if (!d) return new Date().toLocaleDateString('pt-BR')
-  const [y, m, day] = d.split('-')
-  return `${day}/${m}/${y}`
+  return formatDateBR(d, new Date().toLocaleDateString('pt-BR'))
 }
 
 interface ReciboPrintProps {

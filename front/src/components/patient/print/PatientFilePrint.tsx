@@ -1,35 +1,8 @@
 import { forwardRef } from 'react'
 import { TREATMENT_STATUS_LABELS } from '../../../utils/treatmentStatus'
+import { PAYMENT_FORMS, formatDateBR as formatDate, formatCurrency, calculateAge } from '../../../utils/format'
 import type { Patient, Treatment, Payment, Evolution } from '../../../types/entities'
 import './print.css'
-
-const PAYMENT_FORMS: Record<string, string> = {
-  pix: 'PIX',
-  dinheiro: 'Dinheiro',
-  cartao_credito: 'Cartão Crédito',
-  cartao_debito: 'Cartão Débito',
-  convenio: 'Convênio',
-  cheque: 'Cheque',
-}
-
-function formatDate(dateString: string | null) {
-  if (!dateString) return '—'
-  const [year, month, day] = dateString.split('-')
-  return `${day}/${month}/${year}`
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
-}
-
-function calculateAge(dateOfBirth: string) {
-  const today = new Date()
-  const birthDate = new Date(dateOfBirth)
-  let age = today.getFullYear() - birthDate.getFullYear()
-  const hasNotHadBirthdayYet = today < new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate())
-  if (hasNotHadBirthdayYet) age--
-  return age
-}
 
 interface Anamnese {
   alergiasCheck?: string[]

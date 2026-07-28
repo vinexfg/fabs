@@ -1,20 +1,6 @@
 import { forwardRef } from 'react'
+import { PAYMENT_FORMS as FORMAS, formatCurrency as fmtR, formatMonthLabel as fmtMonth } from '../../utils/format'
 import type { Payment, ClinicSettings } from '../../types/entities'
-
-const FORMAS: Record<string, string> = {
-  pix: 'PIX', dinheiro: 'Dinheiro',
-  cartao_credito: 'Cartão Crédito', cartao_debito: 'Cartão Débito',
-  convenio: 'Convênio', cheque: 'Cheque',
-}
-
-function fmtR(v: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0)
-}
-
-function fmtMonth(ym: string) {
-  const [y, m] = ym.split('-')
-  return new Date(+y, +m - 1, 1).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
-}
 
 interface RelatoriosPrintProps {
   clinic: Partial<ClinicSettings>

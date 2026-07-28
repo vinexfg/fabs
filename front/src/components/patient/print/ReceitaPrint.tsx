@@ -1,12 +1,7 @@
 import { forwardRef } from 'react'
+import { formatDateBR as formatDate } from '../../../utils/format'
 import type { Patient, ClinicSettings } from '../../../types/entities'
 import './print.css'
-
-function formatDate(dateString: string | null) {
-  if (!dateString) return '—'
-  const [year, month, day] = dateString.split('-')
-  return `${day}/${month}/${year}`
-}
 
 interface ReceitaPrintProps {
   patient: Patient | null

@@ -1,10 +1,7 @@
 import { forwardRef } from 'react'
+import { formatCurrency as fmtR } from '../../../utils/format'
 import type { Patient, Budget, ClinicSettings } from '../../../types/entities'
 import './print.css'
-
-function fmtR(v: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0)
-}
 
 interface OrcamentoPrintProps {
   patient: Patient | null

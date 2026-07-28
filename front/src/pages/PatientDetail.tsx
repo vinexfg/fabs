@@ -18,6 +18,7 @@ import ReceitaPrint from '../components/patient/print/ReceitaPrint'
 import AtestadoPrint from '../components/patient/print/AtestadoPrint'
 import { usePrint } from '../components/patient/print/usePrint'
 import OrcamentoTab from '../components/patient/OrcamentoTab'
+import { formatCurrency, calculateAge } from '../utils/format'
 import type { Patient, Treatment, Payment, Evolution, ClinicSettings } from '../types/entities'
 import styles from './PatientDetail.module.css'
 
@@ -29,19 +30,6 @@ const TABS = [
   { id: 'evolucoes',   label: 'Evoluções',   icon: '📝' },
   { id: 'orcamento',   label: 'Orçamento',   icon: '📋' },
 ]
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
-}
-
-function calculateAge(dateOfBirth: string) {
-  const today = new Date()
-  const birthDate = new Date(dateOfBirth)
-  let age = today.getFullYear() - birthDate.getFullYear()
-  const hasNotHadBirthdayYet = today < new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate())
-  if (hasNotHadBirthdayYet) age--
-  return age
-}
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>()
